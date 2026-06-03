@@ -1,0 +1,25 @@
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment / secrets
+.env
+
+# Logs & run artifacts
+*.log
+
+# Large MITRE ATT&CK bundle (unduh ulang dari https://github.com/mitre-attack/attack-stix-data)
+data/mitre_cti/*.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# File lock sementara Office/Excel
+~$*

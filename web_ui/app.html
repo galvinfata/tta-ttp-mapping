@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TTP Mapping — Console</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap");
+
+    :root {
+      --bg-0: #05080f;
+      --bg-1: #0a0f1a;
+      --panel: rgba(15, 22, 36, 0.82);
+      --panel-2: rgba(11, 17, 28, 0.9);
+      --border: rgba(60, 224, 214, 0.16);
+      --border-soft: rgba(120, 150, 180, 0.12);
+      --ink: #d7e4f2;
+      --muted: #6b829a;
+      --accent: #29e3d6;
+      --accent-2: #5b8cff;
+      --accent-glow: rgba(41, 227, 214, 0.35);
+      --danger: #ff5d6c;
+      --ok: #38e08b;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Space Grotesk", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% -10%, rgba(91, 140, 255, 0.12), transparent 40%),
+        radial-gradient(circle at 88% 0%, rgba(41, 227, 214, 0.12), transparent 42%),
+        linear-gradient(180deg, var(--bg-1), var(--bg-0));
+      min-height: 100vh;
+    }
+
+    /* grid overlay siber */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(90, 120, 160, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90, 120, 160, 0.05) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 28px;
+      background: rgba(5, 8, 15, 0.72);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .brand .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    .brand small {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: 0.7rem;
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+
+    .nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      padding: 8px 14px;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      transition: all 180ms ease;
+    }
+    .nav a:hover { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 34px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      animation: rise 600ms ease;
+    }
+
+    header h1 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(1.6rem, 3vw, 2.3rem);
+      margin: 0 0 6px;
+      letter-spacing: -0.01em;
+    }
+    header h1 .accent { color: var(--accent); }
+    header p { margin: 0; color: var(--muted); }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(16px);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.5;
+    }
+
+    .card h2 {
+      font-family: "Space Grotesk", sans-serif;
+      margin: 0 0 12px;
+      font-size: 1.15rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card h2::before {
+      content: "";
+      width: 6px; height: 18px; border-radius: 2px;
+      background: var(--accent); box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    label {
+      display: block;
+      font-weight: 500;
+      margin: 12px 0 6px;
+      font-size: 0.9rem;
+      color: var(--ink);
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      padding: 10px 12px;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      background: rgba(5, 9, 16, 0.7);
+      color: var(--ink);
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    input[type="text"]:focus,
+    textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(41, 227, 214, 0.12);
+    }
+    input[type="file"] {
+      width: 100%;
+      color: var(--muted);
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+    input[type="file"]::file-selector-button {
+      background: rgba(41, 227, 214, 0.1);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-family: var(--mono);
+      cursor: pointer;
+      margin-right: 10px;
+    }
+
+    textarea { min-height: 150px; resize: vertical; }
+
+    .button {
+      margin-top: 16px;
+      padding: 12px 18px;
+      border-radius: 10px;
+      border: 1px solid var(--accent);
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(41, 227, 214, 0.12);
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+    .button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: rgba(41, 227, 214, 0.2);
+      box-shadow: 0 0 18px var(--accent-glow);
+    }
+    .button.secondary {
+      border-color: var(--accent-2);
+      background: rgba(91, 140, 255, 0.12);
+      color: #aebfff;
+    }
+    .button.secondary:hover:not(:disabled) { box-shadow: 0 0 18px rgba(91, 140, 255, 0.35); }
+    .button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .status {
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(5, 9, 16, 0.7);
+      border: 1px solid var(--border-soft);
+      border-left: 3px solid var(--accent);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--ink);
+    }
+
+    .footer { margin-top: 10px; font-size: 0.82rem; color: var(--muted); }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .results-grid strong { font-family: var(--mono); color: var(--accent); font-size: 0.85rem; letter-spacing: 0.05em; text-transform: uppercase; }
+
+    .result-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 340px;
+      overflow: auto;
+      padding: 8px 6px 0 0;
+    }
+
+    .result-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 11px;
+      border-radius: 9px;
+      border: 1px solid var(--border-soft);
+      background: rgba(11, 17, 28, 0.7);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      animation: fadeIn 280ms ease;
+    }
+    .result-item input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+    .result-item small { color: var(--muted); }
+
+    .output {
+      margin-top: 16px;
+      background: #03060c;
+      color: #9ff5ec;
+      border: 1px solid var(--border-soft);
+      padding: 16px;
+      border-radius: 12px;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      max-height: 280px;
+      overflow: auto;
+    }
+
+    @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    @media (max-width: 720px) {
+      .app { padding: 26px 16px 60px; }
+      .nav { padding: 14px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="brand">
+      <span class="dot"></span>
+      TTP&nbsp;Mapping <small>CONSOLE</small>
+    </div>
+    <a href="/">&#8592; Home</a>
+  </nav>
+
+  <div class="app">
+    <header>
+      <h1>Analysis <span class="accent">Console</span></h1>
+      <p>Unggah laporan CTI atau tempel teks, lalu validasi hasil pemetaan ATT&amp;CK tactics &amp; techniques.</p>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Input Report</h2>
+        <label for="reportId">Report ID (opsional)</label>
+        <input id="reportId" type="text" placeholder="example-report-001" />
+
+        <label for="reportFile">Upload file (.json, .mjson, .txt, .pdf)</label>
+        <input id="reportFile" type="file" />
+
+        <label for="reportText">Atau tempel teks laporan</label>
+        <textarea id="reportText" placeholder="Tempel laporan CTI di sini..."></textarea>
+
+        <button id="analyzeBtn" class="button">&#9655; Analyze with Agentic AI</button>
+
+        <div class="footer">Tip: gunakan teks ringkas supaya model lebih stabil & cepat.</div>
+      </section>
+
+      <section class="card">
+        <h2>Status</h2>
+        <div id="statusBox" class="status">Idle. Menunggu input.</div>
+        <div id="jobInfo" class="footer">Job ID: -</div>
+        <button id="checkBtn" class="button secondary" disabled>Check Status</button>
+      </section>
+    </div>
+
+    <section class="card">
+      <h2>Validation Panel</h2>
+      <p class="footer">Centang jika mapping benar, hapus centang jika salah. Lalu buat laporan akhir.</p>
+
+      <div class="results-grid">
+        <div>
+          <strong>Tactics</strong>
+          <div id="tacticList" class="result-list"></div>
+        </div>
+        <div>
+          <strong>Techniques</strong>
+          <div id="techniqueList" class="result-list"></div>
+        </div>
+      </div>
+
+      <button id="finalizeBtn" class="button secondary" disabled>Generate Final Report (STIX)</button>
+      <button id="downloadPdfBtn" class="button" disabled>&#8595; Download Report PDF</button>
+      <pre id="finalOutput" class="output">Final report akan tampil di sini.</pre>
+    </section>
+  </div>
+
+  <script>
+    const statusBox = document.getElementById("statusBox");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const finalizeBtn = document.getElementById("finalizeBtn");
+    const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+    const tacticList = document.getElementById("tacticList");
+    const techniqueList = document.getElementById("techniqueList");
+    const finalOutput = document.getElementById("finalOutput");
+    const jobInfo = document.getElementById("jobInfo");
+    const checkBtn = document.getElementById("checkBtn");
+
+    let currentJobId = null;
+    let currentResult = null;
+
+    const POLL_INTERVAL_MS = 3000;
+    // Model lokal 4B bisa butuh bermenit-menit per laporan; beri jendela longgar.
+    const MAX_POLL_MS = 30 * 60 * 1000;
+
+    function setStatus(message) {
+      statusBox.textContent = message;
+    }
+
+    function fmtElapsed(ms) {
+      const s = Math.floor(ms / 1000);
+      const m = Math.floor(s / 60);
+      return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
+    }
+
+    function buildItem(item, group) {
+      const wrapper = document.createElement("label");
+      wrapper.className = "result-item";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = true;
+      checkbox.dataset.group = group;
+      checkbox.dataset.id = item.id;
+
+      const info = document.createElement("span");
+      const name = item.name ? ` - ${item.name}` : "";
+      info.textContent = `${item.id}${name}`;
+
+      wrapper.appendChild(checkbox);
+      wrapper.appendChild(info);
+      return wrapper;
+    }
+
+    function renderResults(result) {
+      tacticList.innerHTML = "";
+      techniqueList.innerHTML = "";
+
+      const tactics = (result && result.tactics) || [];
+      const techniques = (result && result.techniques) || [];
+
+      if (tactics.length === 0) {
+        tacticList.innerHTML = '<div class="result-item"><small>Tidak ada taktik.</small></div>';
+      } else {
+        tactics.forEach(item => tacticList.appendChild(buildItem(item, "tactics")));
+      }
+
+      if (techniques.length === 0) {
+        techniqueList.innerHTML = '<div class="result-item"><small>Tidak ada teknik.</small></div>';
+      } else {
+        techniques.forEach(item => techniqueList.appendChild(buildItem(item, "techniques")));
+      }
+
+      // Jika KEDUANYA kosong, kemungkinan besar model lokal gagal merespons
+      // (output kosong / prompt melebihi context window), bukan benar-benar nihil.
+      if (tactics.length === 0 && techniques.length === 0) {
+        setStatus("Model tidak menghasilkan output. Kemungkinan respons kosong / teks terlalu panjang. Coba klik 'Analyze' lagi atau perpendek teks laporan.");
+      }
+
+      // Aktifkan finalize & unduh PDF hanya jika ada minimal satu item.
+      const hasItems = tactics.length > 0 || techniques.length > 0;
+      finalizeBtn.disabled = !hasItems;
+      downloadPdfBtn.disabled = !hasItems;
+    }
+
+    let polling = false;
+
+    async function pollStatus(jobId) {
+      if (polling) return;       // cegah loop polling ganda
+      polling = true;
+      const startedAt = Date.now();
+      try {
+        while (Date.now() - startedAt < MAX_POLL_MS) {
+          let data;
+          try {
+            const res = await fetch(`/api/status/${jobId}`);
+            data = await res.json();
+          } catch (err) {
+            // Jangan matikan polling karena 1 fetch gagal (server sibuk/blip jaringan).
+            setStatus(`Menunggu server... (${fmtElapsed(Date.now() - startedAt)}) - mencoba lagi`);
+            await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+            continue;
+          }
+
+          if (data.status === "done") {
+            try {
+              const resultRes = await fetch(`/api/results/${jobId}`);
+              currentResult = await resultRes.json();
+              renderResults(currentResult);
+              setStatus("Analysis selesai. Review hasil di bawah.");
+            } catch (err) {
+              setStatus(`Gagal mengambil hasil: ${err}. Klik 'Check Status'.`);
+            }
+            return;
+          }
+          if (data.status === "error") {
+            setStatus(`Error: ${data.error || "unknown"}`);
+            return;
+          }
+          setStatus(`Processing... (${data.status}, ${fmtElapsed(Date.now() - startedAt)})`);
+          await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL_MS));
+        }
+        setStatus(`Timeout. Job mungkin masih berjalan. Klik 'Check Status' untuk lanjut. Job ID: ${jobId}`);
+      } finally {
+        polling = false;
+      }
+    }
+
+    analyzeBtn.addEventListener("click", async () => {
+      finalOutput.textContent = "Final report akan tampil di sini.";
+      finalizeBtn.disabled = true;
+      currentResult = null;
+
+      const formData = new FormData();
+      const reportId = document.getElementById("reportId").value.trim();
+      const fileInput = document.getElementById("reportFile");
+      const textInput = document.getElementById("reportText");
+
+      if (reportId) {
+        formData.append("report_id", reportId);
+      }
+
+      if (fileInput.files.length > 0) {
+        formData.append("report_file", fileInput.files[0]);
+      } else if (textInput.value.trim()) {
+        formData.append("report_text", textInput.value.trim());
+      } else {
+        setStatus("Silakan upload file atau tempel teks laporan.");
+        return;
+      }
+
+      setStatus("Mengirim laporan...");
+      const response = await fetch("/api/process", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setStatus(`Upload gagal: ${errorData.detail || response.status}`);
+        return;
+      }
+
+      const data = await response.json();
+      currentJobId = data.job_id;
+      jobInfo.textContent = `Job ID: ${currentJobId}`;
+      checkBtn.disabled = false;
+      setStatus("Queued. Menunggu proses...");
+      pollStatus(currentJobId);
+    });
+
+    checkBtn.addEventListener("click", async () => {
+      if (!currentJobId) {
+        return;
+      }
+      setStatus(`Mengecek status job ${currentJobId}...`);
+      pollStatus(currentJobId);
+    });
+
+    finalizeBtn.addEventListener("click", async () => {
+      if (!currentJobId || !currentResult) {
+        return;
+      }
+
+      const acceptedTactics = [];
+      const rejectedTactics = [];
+      const acceptedTechniques = [];
+      const rejectedTechniques = [];
+
+      document.querySelectorAll("#tacticList input[type='checkbox']").forEach(box => {
+        if (box.checked) {
+          acceptedTactics.push(box.dataset.id);
+        } else {
+          rejectedTactics.push(box.dataset.id);
+        }
+      });
+
+      document.querySelectorAll("#techniqueList input[type='checkbox']").forEach(box => {
+        if (box.checked) {
+          acceptedTechniques.push(box.dataset.id);
+        } else {
+          rejectedTechniques.push(box.dataset.id);
+        }
+      });
+
+      setStatus("Menyimpan validasi...");
+      const response = await fetch(`/api/validate/${currentJobId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accepted_tactics: acceptedTactics,
+          rejected_tactics: rejectedTactics,
+          accepted_techniques: acceptedTechniques,
+          rejected_techniques: rejectedTechniques,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        setStatus(`Validasi gagal: ${errorData.detail || response.status}`);
+        return;
+      }
+
+      const finalData = await response.json();
+      finalOutput.textContent = JSON.stringify(finalData, null, 2);
+      setStatus("Final report (STIX) tersimpan. Anda juga bisa Download Report PDF.");
+    });
+
+    downloadPdfBtn.addEventListener("click", () => {
+      if (!currentJobId) {
+        return;
+      }
+      // Endpoint memakai hasil validasi bila sudah difinalisasi, jika belum pakai hasil mentah.
+      setStatus("Menyiapkan PDF...");
+      window.open(`/api/report/${currentJobId}.pdf`, "_blank");
+    });
+  </script>
+</body>
+</html>

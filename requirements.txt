@@ -1,0 +1,11 @@
+python-dotenv
+scikit-learn
+stix2
+langgraph
+requests
+openai
+pypdf
+fastapi
+uvicorn
+python-multipart
+reportlab

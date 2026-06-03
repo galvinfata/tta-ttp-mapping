@@ -1,0 +1,392 @@
+import json
+import os
+import sys
+import threading
+import uuid
+from pathlib import Path
+from typing import Any
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse, JSONResponse, Response
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.append(str(PROJECT_ROOT / "src"))
+
+from attck_loader import load_attck_tactics, load_attck_techniques
+from evidence import build_evidence_map
+from orchestrator import process_report
+from report_builder import build_pdf_report
+from stix_builder import build_stix_bundle
+from tactic_agent import create_tactic_agent
+from technique_agent import create_technique_agent
+from reviewer_agent import create_reviewer_agent
+
+WEB_UI_PATH = PROJECT_ROOT / "web_ui" / "index.html"
+WEB_UI_APP_PATH = PROJECT_ROOT / "web_ui" / "app.html"
+ATTCK_SOURCE = os.getenv("ATTCK_SOURCE", str(PROJECT_ROOT / "data" / "mitre_cti" / "enterprise-attack.json"))
+WEB_UI_ENABLE_REVIEWER = os.getenv("WEB_UI_ENABLE_REVIEWER", "false").lower() == "true"
+
+MAX_UPLOAD_BYTES = 5 * 1024 * 1024
+
+APP_STATE: dict[str, Any] = {
+    "ready": False,
+    "attck_techniques": {},
+    "attck_tactics": {},
+    "tactic_model": None,
+    "technique_model": None,
+    "reviewer_model": None,
+    "lock": threading.Lock(),
+}
+
+JOBS: dict[str, dict[str, Any]] = {}
+
+app = FastAPI(title="TTP Mapping PoC")
+
+
+def _ensure_initialized() -> None:
+    if APP_STATE["ready"]:
+        return
+
+    with APP_STATE["lock"]:
+        if APP_STATE["ready"]:
+            return
+
+        attck_techniques = load_attck_techniques(ATTCK_SOURCE)
+        attck_tactics = load_attck_tactics(ATTCK_SOURCE)
+        tactic_model = create_tactic_agent()
+        technique_model = create_technique_agent()
+        reviewer_model = create_reviewer_agent() if WEB_UI_ENABLE_REVIEWER else None
+
+        APP_STATE.update({
+            "ready": True,
+            "attck_techniques": attck_techniques,
+            "attck_tactics": attck_tactics,
+            "tactic_model": tactic_model,
+            "technique_model": technique_model,
+            "reviewer_model": reviewer_model,
+        })
+
+
+def _extract_text_from_json(payload: dict) -> str:
+    if isinstance(payload.get("sentences"), list):
+        text_parts = []
+        for sentence in payload["sentences"]:
+            text = sentence.get("text", "")
+            if text:
+                text_parts.append(text)
+        return " ".join(text_parts).strip()
+
+    signal_text = payload.get("signal")
+    if isinstance(signal_text, str) and signal_text.strip():
+        return signal_text.strip()
+
+    plain_text = payload.get("text")
+    if isinstance(plain_text, str) and plain_text.strip():
+        return plain_text.strip()
+
+    return ""
+
+
+def _build_report(report_id: str, text: str) -> dict:
+    return {
+        "id": report_id,
+        "text": text,
+        "techniques": [],
+    }
+
+
+def _extract_text_from_pdf_bytes(raw: bytes) -> str:
+    """Ekstrak teks dari byte PDF yang diunggah (pakai pypdf)."""
+    try:
+        from pypdf import PdfReader
+    except ImportError:
+        raise HTTPException(
+            status_code=500,
+            detail="pypdf belum terpasang di server. Jalankan: pip install pypdf",
+        )
+
+    import io
+
+    try:
+        reader = PdfReader(io.BytesIO(raw))
+        pages = [(page.extract_text() or "").strip() for page in reader.pages]
+        return "\n\n".join(p for p in pages if p).strip()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Gagal membaca PDF: {exc}")
+
+
+def _read_upload(upload: UploadFile | None, report_text: str, report_id: str) -> dict:
+    if upload is None and not report_text.strip():
+        raise HTTPException(status_code=400, detail="Upload file atau isi teks laporan.")
+
+    if upload is not None:
+        raw = upload.file.read()
+        if len(raw) > MAX_UPLOAD_BYTES:
+            raise HTTPException(status_code=413, detail="File terlalu besar (maks 5MB).")
+
+        filename = upload.filename or "report"
+        suffix = Path(filename).suffix.lower()
+
+        if suffix in {".json", ".mjson"}:
+            try:
+                payload = json.loads(raw.decode("utf-8", errors="ignore"))
+            except json.JSONDecodeError as exc:
+                raise HTTPException(status_code=400, detail=f"JSON invalid: {exc}")
+
+            text = _extract_text_from_json(payload)
+            if not text:
+                raise HTTPException(status_code=400, detail="Isi laporan kosong atau tidak dikenali.")
+
+            derived_id = payload.get("id") or payload.get("title") or Path(filename).stem
+            report_id = report_id.strip() or derived_id
+            return _build_report(report_id, text)
+
+        if suffix == ".pdf":
+            text = _extract_text_from_pdf_bytes(raw)
+            if not text:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Teks PDF kosong/tidak terbaca (mungkin PDF hasil scan/gambar).",
+                )
+            report_id = report_id.strip() or Path(filename).stem
+            return _build_report(report_id, text)
+
+        text = raw.decode("utf-8", errors="ignore").strip()
+        if not text:
+            raise HTTPException(status_code=400, detail="Isi file kosong.")
+
+        report_id = report_id.strip() or Path(filename).stem
+        return _build_report(report_id, text)
+
+    report_id = report_id.strip() or "manual-report"
+    return _build_report(report_id, report_text.strip())
+
+
+def _run_job(job_id: str, report: dict) -> None:
+    job = JOBS[job_id]
+    job["status"] = "running"
+
+    try:
+        _ensure_initialized()
+        result = process_report(
+            report=report,
+            attck_techniques=APP_STATE["attck_techniques"],
+            attck_tactics=APP_STATE["attck_tactics"],
+            tactic_model=APP_STATE["tactic_model"],
+            technique_model=APP_STATE["technique_model"],
+            reviewer_model=APP_STATE["reviewer_model"],
+        )
+
+        tactics = []
+        for tactic_id in result.get("tactics_identified", []):
+            tactics.append({
+                "id": tactic_id,
+                "name": APP_STATE["attck_tactics"].get(tactic_id, ""),
+            })
+
+        techniques = []
+        for technique_id in result.get("predicted_techniques", []):
+            technique = APP_STATE["attck_techniques"].get(technique_id, {})
+            techniques.append({
+                "id": technique_id,
+                "name": technique.get("name", ""),
+            })
+
+        job["result"] = {
+            "report_id": result.get("report_id", ""),
+            "tactics": tactics,
+            "techniques": techniques,
+            "stix_bundle": result.get("stix_bundle", {}),
+            "report_text": report.get("text", ""),
+        }
+        job["status"] = "done"
+    except Exception as exc:
+        job["status"] = "error"
+        job["error"] = str(exc)
+
+
+@app.get("/")
+def index():
+    if not WEB_UI_PATH.exists():
+        raise HTTPException(status_code=404, detail="UI file tidak ditemukan.")
+    return FileResponse(WEB_UI_PATH)
+
+
+@app.get("/app")
+def app_console():
+    if not WEB_UI_APP_PATH.exists():
+        raise HTTPException(status_code=404, detail="Halaman console tidak ditemukan.")
+    return FileResponse(WEB_UI_APP_PATH)
+
+
+@app.post("/api/process")
+def process(
+    report_file: UploadFile | None = File(default=None),
+    report_text: str = Form(default=""),
+    report_id: str = Form(default=""),
+):
+    report = _read_upload(report_file, report_text, report_id)
+
+    job_id = str(uuid.uuid4())
+    JOBS[job_id] = {
+        "status": "queued",
+        "error": None,
+        "result": None,
+        "final": None,
+    }
+
+    # Jalankan di thread mandiri (daemon), bukan via BackgroundTasks yang menahan
+    # worker threadpool request selama proses panjang (bisa bermenit-menit).
+    worker = threading.Thread(target=_run_job, args=(job_id, report), daemon=True)
+    worker.start()
+    return {"job_id": job_id}
+
+
+@app.get("/api/status/{job_id}")
+async def status(job_id: str):
+    job = JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job tidak ditemukan.")
+    return {"job_id": job_id, "status": job["status"], "error": job.get("error")}
+
+
+@app.get("/api/results/{job_id}")
+async def results(job_id: str):
+    job = JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job tidak ditemukan.")
+    if job["status"] != "done":
+        raise HTTPException(status_code=409, detail="Job belum selesai.")
+    return job["result"]
+
+
+@app.post("/api/validate/{job_id}")
+def validate(job_id: str, payload: dict):
+    job = JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job tidak ditemukan.")
+    if job["status"] != "done":
+        raise HTTPException(status_code=409, detail="Job belum selesai.")
+
+    accepted_tactics = payload.get("accepted_tactics") or []
+    accepted_techniques = payload.get("accepted_techniques") or []
+    rejected_tactics = payload.get("rejected_tactics") or []
+    rejected_techniques = payload.get("rejected_techniques") or []
+
+    if not accepted_tactics and not rejected_tactics:
+        accepted_tactics = [item["id"] for item in job["result"]["tactics"]]
+    if not accepted_techniques and not rejected_techniques:
+        accepted_techniques = [item["id"] for item in job["result"]["techniques"]]
+
+    accepted_tactics = [t for t in accepted_tactics if t in APP_STATE["attck_tactics"]]
+    accepted_techniques = [t for t in accepted_techniques if t in APP_STATE["attck_techniques"]]
+
+    report_id = job["result"]["report_id"]
+    report_text = job["result"].get("report_text", "")
+
+    stix_bundle = build_stix_bundle(
+        report_id=report_id,
+        report_text=report_text,
+        techniques=accepted_techniques,
+        attck_techniques=APP_STATE["attck_techniques"],
+    )
+
+    final_report = {
+        "report_id": report_id,
+        "accepted_tactics": accepted_tactics,
+        "accepted_techniques": accepted_techniques,
+        "rejected_tactics": rejected_tactics,
+        "rejected_techniques": rejected_techniques,
+        "stix_bundle": stix_bundle,
+    }
+
+    job["final"] = final_report
+    return final_report
+
+
+@app.get("/api/final/{job_id}")
+def final(job_id: str):
+    job = JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job tidak ditemukan.")
+    if not job.get("final"):
+        raise HTTPException(status_code=404, detail="Final report belum dibuat.")
+    return JSONResponse(job["final"])
+
+
+def _resolve_report_items(job: dict) -> tuple[list[dict], list[dict], dict]:
+    """Tentukan taktik & teknik untuk laporan PDF.
+
+    Pakai hasil validasi (accepted_*) jika analis sudah memvalidasi; jika belum,
+    pakai hasil mentah dari pipeline.
+    """
+    result = job.get("result") or {}
+    final_report = job.get("final")
+
+    if final_report:
+        tactics = [
+            {"id": tid, "name": APP_STATE["attck_tactics"].get(tid, "")}
+            for tid in final_report.get("accepted_tactics", [])
+        ]
+        techniques = [
+            {"id": tid, "name": APP_STATE["attck_techniques"].get(tid, {}).get("name", "")}
+            for tid in final_report.get("accepted_techniques", [])
+        ]
+        stix_bundle = final_report.get("stix_bundle", {})
+    else:
+        tactics = result.get("tactics", [])
+        techniques = result.get("techniques", [])
+        stix_bundle = result.get("stix_bundle", {})
+
+    return tactics, techniques, stix_bundle
+
+
+@app.get("/api/report/{job_id}.pdf")
+def report_pdf(job_id: str):
+    job = JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job tidak ditemukan.")
+    if job["status"] != "done":
+        raise HTTPException(status_code=409, detail="Job belum selesai.")
+
+    result = job.get("result") or {}
+    tactics, techniques, stix_bundle = _resolve_report_items(job)
+    report_text = result.get("report_text", "")
+
+    # Cari kalimat rujukan (evidence) untuk tiap taktik/teknik dari teks laporan.
+    tactic_evidence, technique_evidence = build_evidence_map(
+        report_text=report_text,
+        tactics=tactics,
+        techniques=techniques,
+        attck_techniques=APP_STATE["attck_techniques"],
+        attck_tactics=APP_STATE["attck_tactics"],
+    )
+
+    pdf_bytes = build_pdf_report(
+        report_id=result.get("report_id", job_id),
+        report_text=report_text,
+        tactics=tactics,
+        techniques=techniques,
+        stix_bundle=stix_bundle,
+        attck_techniques=APP_STATE["attck_techniques"],
+        tactic_evidence=tactic_evidence,
+        technique_evidence=technique_evidence,
+    )
+
+    safe_id = (result.get("report_id") or job_id).replace("/", "_").replace("\\", "_")[:80]
+    filename = f"ttp_report_{safe_id}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run(
+        app,
+        host="127.0.0.1",
+        port=8000,
+    )

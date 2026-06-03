@@ -1,0 +1,460 @@
+[
+  {
+    "report_id": "3CXDesktopApp Backdoored in a Suspected Lazarus Campaign  ",
+    "predicted_techniques": [],
+    "ground_truth": [
+      "T1083",
+      "T1140",
+      "T1027",
+      "T1027.009",
+      "T1574.002",
+      "T1573.001",
+      "T1106",
+      "T1082",
+      "T1005"
+    ],
+    "tactics_identified": [
+      "TA0001",
+      "TA0027",
+      "TA0037"
+    ],
+    "stix_bundle": {
+      "type": "bundle",
+      "objects": []
+    }
+  },
+  {
+    "report_id": "A lookback under the TA410 umbrella Its cyberespionage TTPs and activity",
+    "predicted_techniques": [
+      "T1010",
+      "T1027.005"
+    ],
+    "ground_truth": [
+      "T1113",
+      "T1071.001",
+      "T1095",
+      "T1057",
+      "T1518.001",
+      "T1056.001",
+      "T1190",
+      "T1105",
+      "T1027",
+      "T1055.002",
+      "T1140",
+      "T1055",
+      "T1547.001",
+      "T1036.005",
+      "T1112",
+      "T1543.003",
+      "T1053.005",
+      "T1569.002",
+      "T1574.002",
+      "T1027.005",
+      "T1070.004",
+      "T1055.012",
+      "T1074.001",
+      "T1005",
+      "T1083",
+      "T1566.001",
+      "T1106",
+      "T1047",
+      "T1090.001",
+      "T1573.001",
+      "T1027.009",
+      "T1082",
+      "T1041",
+      "T1059.003",
+      "T1027.002",
+      "T1055.001",
+      "T1090",
+      "T1012"
+    ],
+    "tactics_identified": [
+      "TA0001",
+      "TA0027",
+      "TA0002",
+      "TA0041",
+      "TA0003",
+      "TA0028",
+      "TA0005",
+      "TA0030",
+      "TA0006",
+      "TA0031",
+      "TA0007",
+      "TA0032",
+      "TA0008",
+      "TA0033"
+    ],
+    "stix_bundle": {
+      "type": "bundle",
+      "id": "bundle--144da11a-076f-433c-b849-9fbd7463551f",
+      "objects": [
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--29f20d95-4ab6-4d95-b449-4c494a836e1f",
+          "created": "2026-05-26T10:07:39.882661Z",
+          "modified": "2026-05-26T10:07:39.882661Z",
+          "name": "Application Window Discovery",
+          "description": "Adversaries may attempt to get a listing of open application windows. Window listings could convey information about how the system is used.(Citation: Prevailion DarkWatchman 2021) For example, inform",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "discovery"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1010/",
+              "external_id": "T1010"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--70f593ee-40e5-45d2-8787-de857e4b7549",
+          "created": "2026-05-26T10:07:39.883191Z",
+          "modified": "2026-05-26T10:07:39.883191Z",
+          "name": "Indicator Removal from Tools",
+          "description": "Adversaries may remove indicators from tools if they believe their malicious tool was detected, quarantined, or otherwise curtailed. They can modify the tool by removing the indicator and using the up",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1027.005/",
+              "external_id": "T1027.005"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "report_id": "AA20258A Chinese Ministry of State SecurityAffiliated Cyber Threat Actor Activity",
+    "predicted_techniques": [
+      "T1593.001",
+      "T1593.002",
+      "T1596.005",
+      "T1596.001",
+      "T1596.002",
+      "T1596.004",
+      "T1595.002",
+      "T1590"
+    ],
+    "ground_truth": [
+      "T1090.003",
+      "T1190",
+      "T1090.002",
+      "T1090",
+      "T1110",
+      "T1003.001",
+      "T1110.004",
+      "T1056.001",
+      "T1055",
+      "T1083",
+      "T1070.004",
+      "T1059.003",
+      "T1564.001"
+    ],
+    "tactics_identified": [
+      "TA0043",
+      "TA0001",
+      "TA0027",
+      "TA0041",
+      "TA0035"
+    ],
+    "stix_bundle": {
+      "type": "bundle",
+      "id": "bundle--9c3eced3-4bc6-4fe7-aa5b-4e2e0de432eb",
+      "objects": [
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--648c4ed8-7d2c-4ad9-9760-c22395f41a3d",
+          "created": "2026-05-26T10:08:27.110685Z",
+          "modified": "2026-05-26T10:08:27.110685Z",
+          "name": "Social Media",
+          "description": "Adversaries may search social media for information about victims that can be used during targeting. Social media sites may contain various information about a victim organization, such as business an",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "reconnaissance"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1593.001/",
+              "external_id": "T1593.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--58dbaef0-21f1-41eb-86f5-a62214b9802e",
+          "created": "2026-05-26T10:08:27.111559Z",
+          "modified": "2026-05-26T10:08:27.111559Z",
+          "name": "Search Engines",
+          "description": "Adversaries may use search engines to collect information about victims that can be used during targeting. Search engine services typical crawl online sites to index context and may provide users with",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "reconnaissance"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1593.002/",
+              "external_id": "T1593.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--0df9cc73-f3f1-479a-816b-47e1aac77c0b",
+          "created": "2026-05-26T10:08:27.112892Z",
+          "modified": "2026-05-26T10:08:27.112892Z",
+          "name": "Scan Databases",
+          "description": "Adversaries may search within public scan databases for information about victims that can be used during targeting. Various online services continuously publish the results of Internet scans/surveys,",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "reconnaissance"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1596.005/",
+              "external_id": "T1596.005"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--74972b2b-be79-465f-bd8e-b2de60679157",
+          "created": "2026-05-26T10:08:27.113535Z",
+          "modified": "2026-05-26T10:08:27.113535Z",
+          "name": "DNS/Passive DNS",
+          "description": "Adversaries may search DNS data for information about victims that can be used during targeting. DNS information may include a variety of details, including registered name servers as well as records ",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "reconnaissance"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1596.001/",
+              "external_id": "T1596.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--1511cf46-c9f5-45ef-bd99-8881f91dba9a",
+          "created": "2026-05-26T10:08:27.114275Z",
+          "modified": "2026-05-26T10:08:27.114275Z",
+          "name": "WHOIS",
+          "description": "Adversaries may search public WHOIS data for information about victims that can be used during targeting. WHOIS data is stored by regional Internet registries (RIR) responsible for allocating and assi",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "reconnaissance"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1596.002/",
+              "external_id": "T1596.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--9cd69ad0-b87e-4927-8894-5cc91c311c2a",
+          "created": "2026-05-26T10:08:27.114903Z",
+          "modified": "2026-05-26T10:08:27.114903Z",
+          "name": "CDNs",
+          "description": "Adversaries may search content delivery network (CDN) data about victims that can be used during targeting. CDNs allow an organization to host content from a distributed, load balanced array of server",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "reconnaissance"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1596.004/",
+              "external_id": "T1596.004"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--a2fabadd-4a5a-497a-a05a-b42ff47a7677",
+          "created": "2026-05-26T10:08:27.115349Z",
+          "modified": "2026-05-26T10:08:27.115349Z",
+          "name": "Vulnerability Scanning",
+          "description": "Adversaries may scan victims for vulnerabilities that can be used during targeting. Vulnerability scans typically check if the configuration of a target host/application (ex: software and version) pot",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "reconnaissance"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1595.002/",
+              "external_id": "T1595.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--3b98aaf3-4124-432e-a9ab-21ec03283b64",
+          "created": "2026-05-26T10:08:27.115752Z",
+          "modified": "2026-05-26T10:08:27.115752Z",
+          "name": "Gather Victim Network Information",
+          "description": "Adversaries may gather information about the victim's networks that can be used during targeting. Information about networks may include a variety of details, including administrative data (ex: IP ran",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "reconnaissance"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1590/",
+              "external_id": "T1590"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "report_id": "AA20336A Advanced Persistent Threat Actors Targeting US Think Tanks",
+    "predicted_techniques": [],
+    "ground_truth": [
+      "T1190",
+      "T1005"
+    ],
+    "tactics_identified": [
+      "TA0001",
+      "TA0027"
+    ],
+    "stix_bundle": {
+      "type": "bundle",
+      "objects": []
+    }
+  },
+  {
+    "report_id": "AA21076A TrickBot Malware",
+    "predicted_techniques": [
+      "T1566.001",
+      "T1566.002"
+    ],
+    "ground_truth": [
+      "T1053.005",
+      "T1543.003",
+      "T1140",
+      "T1055",
+      "T1566.001",
+      "T1204.002",
+      "T1570",
+      "T1041",
+      "T1106",
+      "T1027",
+      "T1027.002",
+      "T1112",
+      "T1562.001",
+      "T1552.001",
+      "T1012",
+      "T1016",
+      "T1033",
+      "T1082",
+      "T1083",
+      "T1005",
+      "T1071.001",
+      "T1105",
+      "T1573.001"
+    ],
+    "tactics_identified": [
+      "TA0001",
+      "TA0041",
+      "TA0027",
+      "TA0028"
+    ],
+    "stix_bundle": {
+      "type": "bundle",
+      "id": "bundle--94b58da6-3c42-422d-a769-4850bb58f1d3",
+      "objects": [
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--cd626a2b-c692-446e-9f75-07e3a58062ac",
+          "created": "2026-05-26T10:10:01.359146Z",
+          "modified": "2026-05-26T10:10:01.359146Z",
+          "name": "Spearphishing Attachment",
+          "description": "Adversaries may send spearphishing emails with a malicious attachment in an attempt to gain access to victim systems. Spearphishing attachment is a specific variant of spearphishing. Spearphishing att",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1566.001/",
+              "external_id": "T1566.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--53528256-1a82-419e-848b-ee3ea7efd642",
+          "created": "2026-05-26T10:10:01.359877Z",
+          "modified": "2026-05-26T10:10:01.359877Z",
+          "name": "Spearphishing Link",
+          "description": "Adversaries may send spearphishing emails with a malicious link in an attempt to gain access to victim systems. Spearphishing with a link is a specific variant of spearphishing. It is different from o",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1566.002/",
+              "external_id": "T1566.002"
+            }
+          ]
+        }
+      ]
+    }
+  }
+]

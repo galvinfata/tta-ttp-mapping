@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TTP Mapping System — CTI ke MITRE ATT&CK</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap");
+
+    :root {
+      --bg-0: #05080f;
+      --bg-1: #0a0f1a;
+      --panel: rgba(15, 22, 36, 0.82);
+      --border: rgba(60, 224, 214, 0.16);
+      --border-soft: rgba(120, 150, 180, 0.12);
+      --ink: #d7e4f2;
+      --muted: #6b829a;
+      --accent: #29e3d6;
+      --accent-2: #5b8cff;
+      --accent-glow: rgba(41, 227, 214, 0.35);
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Space Grotesk", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% -10%, rgba(91, 140, 255, 0.14), transparent 42%),
+        radial-gradient(circle at 85% 0%, rgba(41, 227, 214, 0.13), transparent 44%),
+        linear-gradient(180deg, var(--bg-1), var(--bg-0));
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(90, 120, 160, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90, 120, 160, 0.05) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none; z-index: 0;
+    }
+
+    .nav {
+      position: sticky; top: 0; z-index: 5;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 28px;
+      background: rgba(5, 8, 15, 0.72);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: 10px; font-family: "Space Grotesk", sans-serif; font-weight: 700; letter-spacing: 0.02em; }
+    .brand .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 12px var(--accent-glow); animation: pulse 2.4s ease-in-out infinite; }
+    .brand small { font-family: var(--mono); color: var(--accent); font-size: 0.7rem; border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px; }
+
+    .nav-cta {
+      color: var(--accent); text-decoration: none; font-family: var(--mono); font-size: 0.85rem;
+      padding: 9px 16px; border: 1px solid var(--accent); border-radius: 8px; transition: all 180ms ease;
+    }
+    .nav-cta:hover { box-shadow: 0 0 16px var(--accent-glow); background: rgba(41, 227, 214, 0.12); }
+
+    .wrap { position: relative; z-index: 1; max-width: 1080px; margin: 0 auto; padding: 56px 24px 90px; }
+
+    /* HERO */
+    .hero { text-align: center; animation: rise 700ms ease; }
+    .tag {
+      display: inline-block; font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.15em;
+      color: var(--accent); border: 1px solid var(--border); border-radius: 999px;
+      padding: 6px 16px; margin-bottom: 22px; text-transform: uppercase;
+    }
+    .hero h1 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      line-height: 1.05; margin: 0 0 18px; letter-spacing: -0.02em;
+    }
+    .hero h1 .grad {
+      background: linear-gradient(110deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero p { max-width: 680px; margin: 0 auto 30px; color: var(--muted); font-size: 1.08rem; line-height: 1.6; }
+
+    .cta-row { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      font-family: "Space Grotesk", sans-serif; font-weight: 600; font-size: 1rem;
+      padding: 14px 28px; border-radius: 10px; cursor: pointer; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 9px; transition: transform 160ms ease, box-shadow 160ms ease;
+    }
+    .btn-primary { background: linear-gradient(110deg, var(--accent), var(--accent-2)); color: #04121a; border: none; }
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(41, 227, 214, 0.3); }
+    .btn-ghost { background: transparent; color: var(--ink); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* SECTION */
+    .section { margin-top: 72px; animation: rise 800ms ease; }
+    .section-title { font-family: "Space Grotesk", sans-serif; font-size: 1.5rem; margin: 0 0 6px; text-align: center; }
+    .section-sub { text-align: center; color: var(--muted); margin: 0 0 32px; }
+
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+    .feat {
+      background: var(--panel); border: 1px solid var(--border-soft); border-radius: 16px; padding: 24px;
+      backdrop-filter: blur(16px); transition: transform 180ms ease, border-color 180ms ease;
+    }
+    .feat:hover { transform: translateY(-4px); border-color: var(--accent); }
+    .feat .ico { font-size: 1.6rem; margin-bottom: 12px; filter: drop-shadow(0 0 8px var(--accent-glow)); }
+    .feat h3 { font-family: "Space Grotesk", sans-serif; margin: 0 0 8px; font-size: 1.1rem; }
+    .feat p { margin: 0; color: var(--muted); font-size: 0.92rem; line-height: 1.55; }
+
+    /* PIPELINE STEPS */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; }
+    .step {
+      background: rgba(11, 17, 28, 0.7); border: 1px solid var(--border-soft); border-left: 3px solid var(--accent);
+      border-radius: 12px; padding: 18px;
+    }
+    .step .n { font-family: var(--mono); color: var(--accent); font-size: 0.8rem; }
+    .step h4 { font-family: "Space Grotesk", sans-serif; margin: 6px 0 6px; font-size: 1rem; }
+    .step p { margin: 0; color: var(--muted); font-size: 0.85rem; line-height: 1.5; }
+
+    .pills { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 26px; }
+    .pill { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); border: 1px solid var(--border-soft); border-radius: 999px; padding: 7px 14px; }
+    .pill b { color: var(--accent); }
+
+    footer { margin-top: 80px; text-align: center; color: var(--muted); font-size: 0.85rem; }
+
+    @keyframes rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    @media (max-width: 720px) { .wrap { padding: 40px 18px 70px; } .nav { padding: 14px 18px; } }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="brand">
+      <span class="dot"></span>
+      TTP&nbsp;Mapping <small>SYSTEM</small>
+    </div>
+    <a class="nav-cta" href="/app">Buka Console &#8594;</a>
+  </nav>
+
+  <div class="wrap">
+    <!-- HERO -->
+    <section class="hero">
+      <span class="tag">CTI &times; MITRE ATT&amp;CK &times; LLM</span>
+      <h1>Pemetaan Otomatis Laporan Ancaman<br/>ke <span class="grad">MITRE ATT&amp;CK</span></h1>
+      <p>
+        Sistem berbasis <b>LLM multi-agent</b> yang membaca laporan Cyber Threat Intelligence (CTI)
+        lalu memetakan secara otomatis ke <b>Tactics</b> dan <b>Techniques</b> MITRE ATT&amp;CK —
+        lengkap dengan validasi analis dan ekspor STIX 2.1 serta laporan PDF.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="/app">&#9655; Mulai Analisis</a>
+        <a class="btn btn-ghost" href="#cara-kerja">Lihat Cara Kerja</a>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="section">
+      <h2 class="section-title">Apa yang dilakukan tools ini?</h2>
+      <p class="section-sub">Mengubah laporan CTI naratif menjadi pemetaan TTP terstruktur secara otomatis.</p>
+      <div class="cards">
+        <div class="feat">
+          <div class="ico">&#129302;</div>
+          <h3>Multi-Agent LLM</h3>
+          <p>Agen Taktik & agen Teknik bekerja terpisah, lalu agen Reviewer mengkritik dan memicu revisi (debat antar-LLM) untuk hasil lebih akurat.</p>
+        </div>
+        <div class="feat">
+          <div class="ico">&#128269;</div>
+          <h3>RAG ATT&amp;CK</h3>
+          <p>Retrieval kandidat teknik dari basis pengetahuan MITRE ATT&amp;CK Enterprise (738 teknik) agar LLM memilih dari daftar yang relevan.</p>
+        </div>
+        <div class="feat">
+          <div class="ico">&#9989;</div>
+          <h3>Validasi Analis</h3>
+          <p>Hasil pemetaan dapat divalidasi (terima/tolak) oleh analis sebelum difinalisasi — human-in-the-loop.</p>
+        </div>
+        <div class="feat">
+          <div class="ico">&#128228;</div>
+          <h3>Ekspor STIX &amp; PDF</h3>
+          <p>Keluaran ganda: bundle <b>STIX 2.1</b> (machine-readable) dan <b>laporan PDF</b> rapi untuk dokumentasi.</p>
+        </div>
+        <div class="feat">
+          <div class="ico">&#128187;</div>
+          <h3>LLM Lokal</h3>
+          <p>Berjalan di atas model lokal via LM Studio (Qwen3) — data tidak keluar ke layanan pihak ketiga.</p>
+        </div>
+        <div class="feat">
+          <div class="ico">&#128196;</div>
+          <h3>Multi-Format Input</h3>
+          <p>Mendukung teks tempel, file <span style="font-family:var(--mono)">.txt</span>, <span style="font-family:var(--mono)">.json</span>/<span style="font-family:var(--mono)">.mjson</span> (TRAM II), dan <span style="font-family:var(--mono)">.pdf</span>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section" id="cara-kerja">
+      <h2 class="section-title">Cara Kerja</h2>
+      <p class="section-sub">Pipeline orkestrasi LangGraph dari input hingga keluaran.</p>
+      <div class="steps">
+        <div class="step"><div class="n">01</div><h4>Input</h4><p>Unggah / tempel laporan CTI. Teks diekstrak (termasuk dari PDF).</p></div>
+        <div class="step"><div class="n">02</div><h4>Tactic Agent</h4><p>LLM mengidentifikasi taktik ATT&amp;CK dari narasi.</p></div>
+        <div class="step"><div class="n">03</div><h4>Technique Agent</h4><p>Retrieval kandidat → LLM memilih teknik yang relevan.</p></div>
+        <div class="step"><div class="n">04</div><h4>Review &amp; Reconcile</h4><p>Reviewer mengkritik, sistem merevisi & menyaring konsistensi.</p></div>
+        <div class="step"><div class="n">05</div><h4>Output</h4><p>STIX 2.1 bundle + laporan PDF siap diunduh.</p></div>
+      </div>
+
+      <div class="pills">
+        <span class="pill"><b>LangGraph</b> orchestration</span>
+        <span class="pill"><b>MITRE ATT&amp;CK</b> Enterprise</span>
+        <span class="pill"><b>TRAM II</b> dataset</span>
+        <span class="pill"><b>STIX 2.1</b> output</span>
+        <span class="pill"><b>LM Studio</b> / Qwen3</span>
+      </div>
+
+      <div class="cta-row" style="margin-top: 42px;">
+        <a class="btn btn-primary" href="/app">&#9655; Buka Analysis Console</a>
+      </div>
+    </section>
+
+    <footer>
+      TTP Mapping System &middot; Proof of Concept &middot; Pemetaan CTI ke MITRE ATT&amp;CK berbasis LLM
+    </footer>
+  </div>
+</body>
+</html>
