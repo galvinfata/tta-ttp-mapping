@@ -297,7 +297,9 @@ Rules:
 3. Do not add any explanation or extra text.
 """
 
-    system_prompt = "You are an expert CTI analyst. Map the text to MITRE ATT&CK Tactics. Output ONLY a JSON object {\"ids\": [...]} of tactic IDs, nothing else. /no_think"
+    system_prompt = "You are an expert CTI analyst. Map the text to MITRE ATT&CK Tactics. Output ONLY a JSON object {\"ids\": [...]} of tactic IDs, nothing else."
+    if DISABLE_THINKING:
+        system_prompt += " /no_think"
 
     attempt_models = [model["model"]]
     fallback_model = model.get("fallback_model")

@@ -71,13 +71,13 @@ Format yang didukung:
 Jika report kamu masih dalam bentuk PDF, konversi dulu ke JSON supaya lebih mudah dipakai untuk pengiriman konteks ke LLM:
 
 ```powershell
-python src/pdf_to_json_converter.py --input-dir data/tram_ii --output-dir data/tram_ii
+python src/knowledge/pdf_to_json_converter.py --input-dir data/tram_ii --output-dir data/tram_ii
 ```
 
 Untuk scan subfolder:
 
 ```powershell
-python src/pdf_to_json_converter.py --input-dir data/tram_ii --output-dir data/tram_ii --recursive
+python src/knowledge/pdf_to_json_converter.py --input-dir data/tram_ii --output-dir data/tram_ii --recursive
 ```
 
 Saat pipeline dijalankan lewat `python main.py`, loader akan otomatis mendeteksi file `.pdf`, mengonversinya menjadi file `*__pdf.json`, lalu membaca JSON hasil konversi tersebut.

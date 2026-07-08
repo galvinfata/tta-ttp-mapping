@@ -1,15 +1,15 @@
 import sys
 import os
 from pathlib import Path
-sys.path.append("src")
+sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
 
-from data_loader import load_tram_dataset, split_dataset
-from attck_loader import load_attck_techniques, load_attck_tactics
-from tactic_agent import create_tactic_agent
-from technique_agent import create_technique_agent
-from reviewer_agent import create_reviewer_agent
-from orchestrator import process_report
-from evaluator import evaluate_predictions, save_results
+from knowledge.data_loader import load_tram_dataset, split_dataset
+from knowledge.attck_loader import load_attck_techniques, load_attck_tactics
+from agents.tactic_agent import create_tactic_agent
+from agents.technique_agent import create_technique_agent
+from agents.reviewer_agent import create_reviewer_agent
+from pipeline.orchestrator import process_report
+from evaluation.evaluator import evaluate_predictions, save_results
 
 
 def validate_setup() -> bool:

@@ -14,11 +14,13 @@ import sys
 import json
 import time
 from datetime import datetime
+from pathlib import Path
 
-sys.path.append("src")
+# src/evaluation/evaluate_run.py -> tambahkan folder src ke path.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from attck_loader import load_attck_techniques, load_attck_tactics
-from evaluator import evaluate_predictions, evaluate_tactics, save_results
+from knowledge.attck_loader import load_attck_techniques, load_attck_tactics
+from evaluation.evaluator import evaluate_predictions, evaluate_tactics, save_results
 
 ATTCK_SOURCE = os.getenv("ATTCK_SOURCE", "data/mitre_cti/enterprise-attack.json")
 
@@ -44,10 +46,10 @@ def _print_metrics(results: list[dict], attck_techniques: dict) -> None:
 
 
 def _run_live(n: int, attck_techniques: dict, attck_tactics: dict) -> list[dict]:
-    from data_loader import load_tram_dataset
-    from tactic_agent import create_tactic_agent
-    from technique_agent import create_technique_agent
-    from orchestrator import process_report
+    from knowledge.data_loader import load_tram_dataset
+    from agents.tactic_agent import create_tactic_agent
+    from agents.technique_agent import create_technique_agent
+    from pipeline.orchestrator import process_report
 
     reports = load_tram_dataset("data/tram_ii")[:n]
     tactic_model = create_tactic_agent()

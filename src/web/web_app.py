@@ -9,17 +9,18 @@ from typing import Any
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# src/web/web_app.py -> naik 3 level ke root proyek.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(PROJECT_ROOT / "src"))
 
-from attck_loader import load_attck_tactics, load_attck_techniques
-from evidence import build_evidence_map
-from orchestrator import process_report
-from report_builder import build_pdf_report
-from stix_builder import build_stix_bundle
-from tactic_agent import create_tactic_agent
-from technique_agent import create_technique_agent
-from reviewer_agent import create_reviewer_agent
+from knowledge.attck_loader import load_attck_tactics, load_attck_techniques
+from reporting.evidence import build_evidence_map
+from pipeline.orchestrator import process_report
+from reporting.report_builder import build_pdf_report
+from reporting.stix_builder import build_stix_bundle
+from agents.tactic_agent import create_tactic_agent
+from agents.technique_agent import create_technique_agent
+from agents.reviewer_agent import create_reviewer_agent
 
 WEB_UI_PATH = PROJECT_ROOT / "web_ui" / "index.html"
 WEB_UI_APP_PATH = PROJECT_ROOT / "web_ui" / "app.html"

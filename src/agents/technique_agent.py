@@ -361,7 +361,9 @@ def extract_techniques(
     technique_str = "\n".join(technique_list)
     
     max_tokens = LOCAL_LLM_MAX_TOKENS_TECHNIQUE
-    system_prompt = "You are an expert CTI analyst. Map the text to MITRE ATT&CK Techniques. Output ONLY a JSON object {\"ids\": [...]} of technique IDs from the candidate list, nothing else. /no_think"
+    system_prompt = "You are an expert CTI analyst. Map the text to MITRE ATT&CK Techniques. Output ONLY a JSON object {\"ids\": [...]} of technique IDs from the candidate list, nothing else."
+    if DISABLE_THINKING:
+        system_prompt += " /no_think"
 
     # Laporan panjang dipecah jadi beberapa chunk agar TTP di bagian akhir tidak
     # hilang akibat pemotongan. Hasil tiap chunk digabung (union) dengan menjaga urutan.

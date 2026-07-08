@@ -18,11 +18,13 @@ import glob
 import json
 from collections import Counter
 from datetime import datetime
+from pathlib import Path
 
-sys.path.append("src")
+# src/evaluation/build_excel_report.py -> tambahkan folder src ke path.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from attck_loader import load_attck_techniques, load_attck_tactics
-from evaluator import (
+from knowledge.attck_loader import load_attck_techniques, load_attck_tactics
+from evaluation.evaluator import (
     evaluate_predictions,
     evaluate_tactics,
     derive_tactic_ground_truth,

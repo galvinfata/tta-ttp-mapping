@@ -3,12 +3,12 @@ from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
-from tactic_agent import identify_tactics
-from technique_agent import extract_techniques
-from reconciler import reconcile_results
-from validator import validate_techniques
-from stix_builder import build_stix_bundle
-from reviewer_agent import review_tactics_and_techniques
+from agents.tactic_agent import identify_tactics
+from agents.technique_agent import extract_techniques
+from pipeline.reconciler import reconcile_results
+from pipeline.validator import validate_techniques
+from reporting.stix_builder import build_stix_bundle
+from agents.reviewer_agent import review_tactics_and_techniques
 
 
 class PipelineState(TypedDict):

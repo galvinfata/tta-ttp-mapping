@@ -1,113 +1,149 @@
-# TTP Mapping PoC - LM Studio LLM
+# TTP Mapping System — CTI ke MITRE ATT&CK (LLM Multi-Agent)
 
-Sistem untuk memetakan Cyber Threat Intelligence (CTI) ke MITRE ATT&CK framework menggunakan LLM dari server local LM Studio.
+Sistem untuk memetakan laporan **Cyber Threat Intelligence (CTI)** ke framework
+**MITRE ATT&CK** (Tactics & Techniques) menggunakan LLM lokal (LM Studio) dengan
+pipeline **multi-agent** (LangGraph). Output ganda: **STIX 2.1** bundle + **laporan PDF**.
 
-## Quick Start (3 Menit)
+---
 
-### 1. Konfigurasi LM Studio (Local Server)
+## Struktur Proyek
 
-Pastikan LM Studio server aktif dan endpoint OpenAI-compatible tersedia.
+```
+tta-ttp-mapping/
+├── main.py                     # Entry point: pipeline batch atas dataset
+├── requirements.txt
+├── .env                        # Konfigurasi LM Studio (tidak di-commit)
+│
+├── src/                        # Kode sumber (paket Python)
+│   ├── agents/                 # Agen LLM
+│   │   ├── tactic_agent.py         · identifikasi Tactics
+│   │   ├── technique_agent.py      · retrieval + pilih Techniques
+│   │   └── reviewer_agent.py       · review & picu revisi (debat)
+│   ├── pipeline/               # Orkestrasi
+│   │   ├── orchestrator.py         · graph LangGraph (alur utama)
+│   │   ├── reconciler.py           · rekonsiliasi taktik↔teknik
+│   │   └── validator.py            · validasi ID ATT&CK
+│   ├── knowledge/              # Data & knowledge base
+│   │   ├── attck_loader.py         · muat ATT&CK (teknik & taktik)
+│   │   ├── data_loader.py          · muat dataset TRAM II + ground truth
+│   │   └── pdf_to_json_converter.py
+│   ├── reporting/              # Keluaran
+│   │   ├── stix_builder.py         · bundle STIX 2.1
+│   │   ├── report_builder.py       · laporan PDF
+│   │   └── evidence.py             · kalimat rujukan (evidence) per mapping
+│   ├── evaluation/             # Evaluasi
+│   │   ├── evaluator.py            · Precision/Recall/F1 (teknik & taktik)
+│   │   ├── evaluate_run.py         · harness evaluasi (file / live)
+│   │   └── build_excel_report.py   · ekspor laporan Excel
+│   └── web/
+│       └── web_app.py          # Backend FastAPI (UI + API)
+│
+├── web_ui/                     # Front-end web
+│   ├── index.html                  · homepage (penjelasan)
+│   └── app.html                    · console (tool utama)
+│
+├── scripts/                    # Skrip utilitas / batch
+│   ├── run_full_pipeline.py        · jalankan pipeline atas seluruh dataset
+│   ├── compare_results.py          · bandingkan dua hasil run
+│   ├── verify_results.py           · sanity-check hasil
+│   └── audit_dataset.py            · audit dataset
+│
+├── docs/                       # Dokumentasi
+│   ├── SETUP_GUIDE.md
+│   ├── AGENT.md
+│   ├── ARSITEKTUR_DAN_FLOWCHART.md
+│   └── skripsi/                    · dokumen tugas akhir (BAB 4, dsb.)
+│
+├── data/
+│   ├── tram_ii/                # Dataset laporan CTI + anotasi (ground truth)
+│   └── mitre_cti/              # enterprise-attack.json (tidak di-commit; unduh dari MITRE)
+│
+└── results/
+    ├── predictions/            # Hasil prediksi (JSON)
+    └── metrics/                # Laporan metrik (Excel)
+```
 
-Edit `.env`:
+---
+
+## Quick Start
+
+### 1. Prasyarat
+```bash
+python -m pip install -r requirements.txt
+```
+
+### 2. Konfigurasi LM Studio
+Pastikan LM Studio server aktif (endpoint OpenAI-compatible). Buat `.env`:
 ```
 LLM_PROVIDER=lmstudio
 LOCAL_LLM_BASE_URL=http://100.100.211.39:1234
-LOCAL_LLM_MODEL=your-loaded-model-name
-# Optional jika server butuh auth
-# LOCAL_LLM_API_KEY=...
+LOCAL_LLM_MODEL=4e-mitre-qwen2.5
+# LOCAL_LLM_API_KEY=...        # jika server butuh auth
+# LLM_DISABLE_THINKING=false   # true hanya untuk model thinking (Qwen3)
 ```
 
-### 2. Pastikan LM Studio server aktif
-Server harus berjalan dan endpoint OpenAI-compatible tersedia pada `LOCAL_LLM_BASE_URL`.
-
-### 3. Siapkan Dataset
-- Letakkan file TRAM II `.json`, `.mjson`, atau `.pdf` di: `data/tram_ii/`
-- Letakkan `enterprise-attack.json` di: `data/mitre_cti/`
-
-Jika sumber awal kamu PDF dan ingin ubah dulu ke JSON agar lebih mudah diproses LLM:
-
-```powershell
-python src/pdf_to_json_converter.py --input-dir data/tram_ii --output-dir data/tram_ii
-```
-
-Saat `main.py` dijalankan, loader juga akan otomatis mengonversi PDF ke JSON dengan nama `__pdf.json` di akhir nama file (contoh: `report__pdf.json`) lalu memproses JSON tersebut.
-
-Opsional recursive:
-
-```powershell
-python src/pdf_to_json_converter.py --input-dir data/tram_ii --output-dir data/tram_ii --recursive
-```
+### 3. Siapkan data
+- Dataset TRAM II (`.json`/`.mjson`/`.pdf`) → `data/tram_ii/`
+- `enterprise-attack.json` → `data/mitre_cti/` (unduh dari
+  [mitre-attack/attack-stix-data](https://github.com/mitre-attack/attack-stix-data))
 
 ### 4. Jalankan
-```powershell
+
+**Web UI (disarankan untuk demo):**
+```bash
+python -m uvicorn web.web_app:app --app-dir src --host 127.0.0.1 --port 8000
+```
+Buka http://127.0.0.1:8000 → homepage → **Buka Console**.
+
+**Pipeline batch (subset dataset):**
+```bash
 python main.py
 ```
 
----
-
-## Web UI PoC (Optional)
-
-Gunakan UI sederhana untuk upload laporan dan validasi hasil mapping.
-
-```powershell
-python -m uvicorn src.web_app:app --reload
+**Pipeline penuh atas seluruh dataset:**
+```bash
+python scripts/run_full_pipeline.py
 ```
 
-Buka di browser: http://127.0.0.1:8000
-
----
-
-## Dokumentasi Lengkap
-
-👉 Baca [SETUP_GUIDE.md](SETUP_GUIDE.md) untuk detail setup, troubleshooting, dan format dataset.
-
----
-
-## Architecture
-
-```
-Input (TRAM II Reports)
-    ↓
-[Tactic Agent] + [Technique Agent]  ← LM Studio API
-    ↓
-[Reconciler] → [Validator] → [STIX Builder]
-    ↓
-Output (JSON + STIX 2.1 Bundles)
+**Evaluasi (metrik P/R/F1):**
+```bash
+# dari file hasil yang sudah ada
+python src/evaluation/evaluate_run.py results/predictions/<file>.json
+# atau live N laporan
+EVAL_N=5 python src/evaluation/evaluate_run.py
 ```
 
 ---
 
-## Files
+## Arsitektur pipeline
 
-- `main.py` - Entry point
-- `src/` - Core pipeline modules
-- `data/tram_ii/` - Input dataset (mendukung .json, .mjson, .pdf)
-- `src/pdf_to_json_converter.py` - Konversi PDF report ke JSON
-- `data/mitre_cti/` - ATT&CK knowledge base
-- `results/predictions/` - Output predictions + metrics
-- `.env` - Config token (jangan commit!)
-
----
-
-## Tech Stack
-
-- **LLM**: LM Studio (OpenAI-compatible endpoint)
-- **Framework**: MITRE ATT&CK
-- **Dataset**: TRAM II (Cyber Threat Intelligence reports)
-- **Output**: STIX 2.1 + evaluation metrics (P/R/F1)
-
----
-
-## ⚠️ Security
-
-- Jangan pernah hardcode token di repository
-- Token di `.env` sudah di `.gitignore`
-- Jangan share token di chat/issue
-- Revoke token lama segera setelah diganti
+```
+Input (laporan CTI: teks / .json / .mjson / .pdf)
+        │
+        ▼
+[Tactic Agent] → [Technique Agent]        ← LM Studio (LLM lokal)
+        │            (RAG: retrieval kandidat ATT&CK)
+        ▼
+[Reviewer] → revisi bila tidak konsisten  (loop debat multi-agent, opt-in)
+        │
+        ▼
+[Reconciler] → [Validator]
+        │
+        ▼
+Output: STIX 2.1 bundle  +  laporan PDF (dengan kalimat rujukan)
+```
 
 ---
 
-## Support
+## Dokumentasi lengkap
+- Setup & troubleshooting: [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md)
+- Arsitektur & flowchart: [docs/ARSITEKTUR_DAN_FLOWCHART.md](docs/ARSITEKTUR_DAN_FLOWCHART.md)
+- Catatan agen/konfigurasi: [docs/AGENT.md](docs/AGENT.md)
 
-Kalau ada error, cek [SETUP_GUIDE.md](SETUP_GUIDE.md) section "Support & Debugging".
+## Tech stack
+LM Studio (LLM lokal) · LangGraph · MITRE ATT&CK Enterprise · dataset TRAM II ·
+FastAPI · STIX 2.1 · reportlab (PDF)
 
+## Keamanan
+`.env` berisi konfigurasi lokal dan **tidak di-commit** (sudah di `.gitignore`).
+Jangan hardcode kredensial di repo.

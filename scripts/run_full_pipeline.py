@@ -1,13 +1,18 @@
 import os, sys, json, time
 from datetime import datetime
-sys.path.append('src')
-from data_loader import load_tram_dataset
-from attck_loader import load_attck_techniques, load_attck_tactics
-from tactic_agent import create_tactic_agent
-from technique_agent import create_technique_agent
-from reviewer_agent import create_reviewer_agent
-from orchestrator import process_report
-from evaluator import evaluate_predictions, save_results
+from pathlib import Path
+
+# scripts/run_full_pipeline.py -> tambahkan folder src (satu level di atas) ke path.
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
+
+from knowledge.data_loader import load_tram_dataset
+from knowledge.attck_loader import load_attck_techniques, load_attck_tactics
+from agents.tactic_agent import create_tactic_agent
+from agents.technique_agent import create_technique_agent
+from agents.reviewer_agent import create_reviewer_agent
+from pipeline.orchestrator import process_report
+from evaluation.evaluator import evaluate_predictions, save_results
 
 # Default fokus ke matrix Enterprise saja agar tidak tercampur teknik/taktik
 # Mobile & PRE (yang memunculkan ID taktik invalid seperti TA0027).

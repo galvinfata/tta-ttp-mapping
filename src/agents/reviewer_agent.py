@@ -206,7 +206,9 @@ def review_tactics_and_techniques(
         "- Output only a JSON object. No extra text.\n"
     )
 
-    system_prompt = "You are a strict MITRE ATT&CK reviewer. Output only a JSON object, nothing else. /no_think"
+    system_prompt = "You are a strict MITRE ATT&CK reviewer. Output only a JSON object, nothing else."
+    if DISABLE_THINKING:
+        system_prompt += " /no_think"
 
     attempt_models = [model["model"]]
     fallback_model = model.get("fallback_model")

@@ -395,7 +395,7 @@ print(f"Raw technique output: {techniques}")
 
 **Investigation:**
 ```bash
-python src/run_full_pipeline.py
+python scripts/run_full_pipeline.py
 # Check results_all_*.json metrics
 # Compare precision vs recall
 ```
