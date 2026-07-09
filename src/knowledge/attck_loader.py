@@ -51,8 +51,10 @@ def load_attck_techniques(attck_source: str) -> dict:
             if obj.get("type") != "attack-pattern":
                 continue
 
-            # Skip yang sudah deprecated
-            if obj.get("x_mitre_deprecated", False):
+            # Skip yang sudah deprecated ATAU revoked (ID usang seperti T1017/T1077
+            # tetap ada di STIX sebagai objek revoked; tanpa filter ini mereka bocor
+            # jadi kandidat retrieval dan menjadi false positive).
+            if obj.get("x_mitre_deprecated", False) or obj.get("revoked", False):
                 continue
 
             # Ambil ID teknik (T1566, T1059, dll)
@@ -126,7 +128,7 @@ def load_attck_tactics(attck_source: str) -> dict:
         for obj in data.get("objects", []):
             if obj.get("type") != "x-mitre-tactic":
                 continue
-            if obj.get("x_mitre_deprecated", False):
+            if obj.get("x_mitre_deprecated", False) or obj.get("revoked", False):
                 continue
 
             tactic_id = None

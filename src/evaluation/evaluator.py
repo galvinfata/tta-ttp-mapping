@@ -109,6 +109,8 @@ def evaluate_tactics(results: list[dict], attck_techniques: dict) -> dict:
 
 def save_results(results: list[dict], output_path: str):
     """Simpan hasil prediksi ke file JSON."""
+    from pathlib import Path
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(results, f, indent=2, ensure_ascii=False)
     print(f"Hasil disimpan ke: {output_path}")

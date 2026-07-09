@@ -1,0 +1,59 @@
+{
+  "dataset": {
+    "reports": 151,
+    "kb_techniques": 738
+  },
+  "k_values": [
+    10,
+    20,
+    50
+  ],
+  "ceiling": {
+    "exact": {
+      "10": {
+        "k": 10,
+        "gt_total": 1943,
+        "gt_covered": 130,
+        "gt_missed": 1813,
+        "recall_ceiling": 0.0669
+      },
+      "20": {
+        "k": 20,
+        "gt_total": 1943,
+        "gt_covered": 247,
+        "gt_missed": 1696,
+        "recall_ceiling": 0.1271
+      },
+      "50": {
+        "k": 50,
+        "gt_total": 1943,
+        "gt_covered": 512,
+        "gt_missed": 1431,
+        "recall_ceiling": 0.2635
+      }
+    },
+    "base": {
+      "10": {
+        "k": 10,
+        "gt_total": 1723,
+        "gt_covered": 208,
+        "gt_missed": 1515,
+        "recall_ceiling": 0.1207
+      },
+      "20": {
+        "k": 20,
+        "gt_total": 1723,
+        "gt_covered": 364,
+        "gt_missed": 1359,
+        "recall_ceiling": 0.2113
+      },
+      "50": {
+        "k": 50,
+        "gt_total": 1723,
+        "gt_covered": 672,
+        "gt_missed": 1051,
+        "recall_ceiling": 0.39
+      }
+    }
+  }
+}

@@ -4,8 +4,15 @@ import re
 import time
 from dotenv import load_dotenv
 from openai import OpenAI
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+
+# Retrieval TF-IDF dipisah ke modul murni tanpa dependensi LLM agar bisa dipakai
+# ulang oleh skrip evaluasi offline. Di-import ulang di sini demi kompatibilitas.
+from agents.retrieval import (
+    RETRIEVAL_MAX_CHARS,
+    INCLUDE_SUBTECHNIQUES,
+    _build_technique_document,
+    _retrieve_candidate_techniques,
+)
 
 load_dotenv()
 
@@ -14,14 +21,12 @@ MAX_RETRIES_PER_MODEL = 3
 BASE_BACKOFF_SECONDS = 1.0
 REQUEST_TIMEOUT_SECONDS = int(os.getenv("LLM_REQUEST_TIMEOUT_SECONDS", "300"))
 DEFAULT_CANDIDATE_TOP_K = int(os.getenv("TECHNIQUE_CANDIDATE_TOP_K", "50"))
-INCLUDE_SUBTECHNIQUES = os.getenv("TECHNIQUE_INCLUDE_SUBTECHNIQUES", "true").lower() == "true"
 # Ukuran chunk teks laporan yang dikirim ke LLM. Laporan panjang dipecah jadi
 # beberapa chunk (lihat _chunk_text) agar TTP di bagian akhir tidak hilang.
 # CATATAN: total prompt (daftar kandidat + chunk + output) harus muat di context
 # window model. Default ini dipilih agar aman untuk n_ctx 4096. Jika model
 # dimuat dengan context lebih besar di LM Studio, naikkan nilai-nilai ini.
 LOCAL_LLM_REPORT_MAX_CHARS = int(os.getenv("LOCAL_LLM_REPORT_MAX_CHARS", "3500"))
-RETRIEVAL_MAX_CHARS = int(os.getenv("RETRIEVAL_MAX_CHARS", "20000"))
 CHUNK_OVERLAP_CHARS = int(os.getenv("LLM_CHUNK_OVERLAP_CHARS", "250"))
 MAX_CHUNKS = int(os.getenv("LLM_MAX_CHUNKS", "3"))
 LOCAL_LLM_MAX_TOKENS_TECHNIQUE = int(os.getenv("LOCAL_LLM_MAX_TOKENS_TECHNIQUE", "512"))
@@ -72,7 +77,7 @@ def _is_transient_error(error_text: str) -> bool:
 
 def create_technique_agent():
     """Inisialisasi LM Studio local server (OpenAI-compatible)."""
-    base_url = os.getenv("LOCAL_LLM_BASE_URL").rstrip("/")
+    base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://100.100.211.39:1234").rstrip("/")
     model_name = os.getenv("LOCAL_LLM_MODEL", "qwen/qwen3-4b")
     api_key = os.getenv("LOCAL_LLM_API_KEY", "")
     fallback_model = os.getenv("LOCAL_LLM_FALLBACK_MODEL", "").strip() or None
@@ -265,50 +270,6 @@ def _extract_technique_ids_from_text(response_text: str, attck_techniques: dict)
     return valid_ids
 
 
-def _build_technique_document(technique_id: str, technique_data: dict) -> str:
-    name = technique_data.get("name", "")
-    description = technique_data.get("description", "")[:800]
-    tactics = " ".join(technique_data.get("tactics", []))
-    return f"{technique_id} {name}. {description} {tactics}"
-
-
-def _retrieve_candidate_techniques(
-    report_text: str,
-    attck_techniques: dict,
-    top_k: int,
-    include_subtechniques: bool = INCLUDE_SUBTECHNIQUES,
-) -> list[str]:
-    candidates = []
-    documents = []
-
-    for technique_id, technique_data in attck_techniques.items():
-        if not include_subtechniques and "." in technique_id:
-            continue
-        candidates.append(technique_id)
-        documents.append(_build_technique_document(technique_id, technique_data))
-
-    if not candidates:
-        return []
-
-    try:
-        vectorizer = TfidfVectorizer(
-            stop_words="english",
-            ngram_range=(1, 2),
-            max_features=20000,
-        )
-        matrix = vectorizer.fit_transform([report_text[:RETRIEVAL_MAX_CHARS]] + documents)
-        similarity = cosine_similarity(matrix[0:1], matrix[1:]).flatten()
-
-        ranked_indices = similarity.argsort()[::-1]
-        max_candidates = min(top_k, len(candidates))
-        return [candidates[idx] for idx in ranked_indices[:max_candidates]]
-
-    except Exception as e:
-        # Fallback aman jika retrieval gagal: pertahankan perilaku lama (urutan awal dictionary).
-        print(f"Warning retrieval kandidat gagal, pakai fallback default: {e}")
-        return candidates[:top_k]
-
-
 def extract_techniques(
     model,
     report_text: str,
@@ -349,6 +310,7 @@ def extract_techniques(
     # Deskripsi dipangkas dan daftar dibatasi anggaran karakter agar muat di
     # context window model (penting untuk model dengan n_ctx kecil seperti 4096).
     technique_list = []
+    shown_candidate_ids = set()
     used_chars = 0
     for tid in candidate_technique_ids:
         tdata = attck_techniques[tid]
@@ -357,6 +319,7 @@ def extract_techniques(
         if used_chars + len(line) > CANDIDATE_LIST_MAX_CHARS and technique_list:
             break
         technique_list.append(line)
+        shown_candidate_ids.add(tid)
         used_chars += len(line) + 1
     technique_str = "\n".join(technique_list)
     
@@ -377,24 +340,43 @@ def extract_techniques(
     seen = set()
     aggregated: list[str] = []
     for chunk in chunks:
-        prompt = f"""You are a CTI analyst mapping text to MITRE ATT&CK TECHNIQUES (T#### or T####.###).
-You MUST select ONLY from the candidate list below. If none match, return an empty list.
+        prompt = f"""TASK: Select every MITRE ATT&CK technique from CANDIDATES that is described in
+the report excerpt. You MUST choose only from CANDIDATES. Never output an ID
+that is not in the list.
 
-Candidate Techniques:
+CANDIDATES:
 {technique_str}
 
-CTI Example:
-"Phishing email with malicious attachment executed by the victim."
-Expected output: {{"ids": ["T1566.001"]}}
+DECISION RULES:
+1. Select a technique ONLY if the report describes the attacker actually
+   performing that behavior. Do NOT select for:
+   - security recommendations or mitigations ("enable MFA", "patch systems")
+   - tool capabilities that were not observed in use
+   - plain IOC lists (hashes, IPs, domains) with no described behavior
+2. Prefer the sub-technique (T####.###) when the report is specific about the
+   variant; use the parent (T####) only when the description is generic.
+3. Scan the WHOLE excerpt sentence by sentence. CTI reports typically describe
+   5-15 techniques; do not stop after the first few matches.
+4. A behavior can be described without naming the technique — match on meaning
+   (e.g., "decoded a base64 payload" = Deobfuscate/Decode Files or Information).
+5. If a candidate has no supporting sentence in the excerpt, exclude it.
+6. If none match, return {{"ids": []}}.
+
+EXAMPLE
+Report: "The actor sent spear-phishing emails with a malicious ZIP attachment.
+When opened by the victim, a PowerShell loader decoded a base64-encoded payload
+and created a Run registry key for persistence."
+Output: {{"ids": ["T1566.001","T1204.002","T1059.001","T1140","T1547.001"]}}
+(Example IDs are illustrative — your answer must come from CANDIDATES above.)
+
+EXAMPLE (nothing applies)
+Report: "Indicators: 5f2b...e91a, 203.0.113.7. We recommend blocking these IPs."
+Output: {{"ids": []}}
 {feedback_block}
-Report Excerpt:
+REPORT EXCERPT:
 \"\"\"{chunk}\"\"\"
 
-Rules:
-1. Output ONLY a JSON object: {{"ids": ["T....", ...]}} using technique IDs from the candidate list.
-2. Do not invent IDs outside the list.
-3. If unsure, use an empty list: {{"ids": []}}.
-4. No extra text, no markdown, no explanation.
+Answer with ONLY the JSON object {{"ids": [...]}}.
 """
         chunk_techniques = _llm_extract_ids(
             model=model,
@@ -403,6 +385,7 @@ Rules:
             max_tokens=max_tokens,
             attck_techniques=attck_techniques,
             temperature=revise_temperature,
+            allowed_ids=shown_candidate_ids,
         )
         for tid in chunk_techniques:
             if tid not in seen:
@@ -419,8 +402,13 @@ def _llm_extract_ids(
     max_tokens: int,
     attck_techniques: dict,
     temperature: float = 0.0,
+    allowed_ids: set | None = None,
 ) -> list[str]:
-    """Panggil LLM untuk satu prompt dengan retry/fallback, kembalikan teknik valid."""
+    """Panggil LLM untuk satu prompt dengan retry/fallback, kembalikan teknik valid.
+
+    allowed_ids: bila diisi, ID di luar himpunan ini dibuang (closed-set selection —
+    menyaring ID yang disalin model dari contoh few-shot tapi tak ada di kandidat).
+    """
     attempt_models = [model["model"]]
     fallback_model = model.get("fallback_model")
     if fallback_model and fallback_model != model["model"]:
@@ -462,7 +450,9 @@ def _llm_extract_ids(
 
                 return [
                     t for t in techniques
-                    if isinstance(t, str) and t in attck_techniques
+                    if isinstance(t, str)
+                    and t in attck_techniques
+                    and (allowed_ids is None or t in allowed_ids)
                 ]
 
             except json.JSONDecodeError as e:

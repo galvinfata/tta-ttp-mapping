@@ -54,6 +54,26 @@ DEFAULT_TACTIC_LIST = {
     "TA0043": "Reconnaissance",
 }
 
+# Glosarium satu baris per taktik (prompt v2). Nama taktik saja ambigu untuk
+# model 4B ("Resource Development", "Collection"); definisi singkat memberi
+# jangkar semantik. Urutan dict = urutan kill-chain untuk penyusunan prompt.
+TACTIC_GLOSSARY = {
+    "TA0043": "gathering info about the target before attack",
+    "TA0042": "acquiring infrastructure, accounts, or tools",
+    "TA0001": "getting into the network (phishing, exploits, valid accounts)",
+    "TA0002": "running attacker code (scripts, commands, user execution)",
+    "TA0003": "keeping access across restarts (run keys, services, tasks)",
+    "TA0004": "gaining higher-level permissions",
+    "TA0005": "avoiding detection (obfuscation, disabling tools, masquerading)",
+    "TA0006": "stealing passwords, hashes, tokens, keys",
+    "TA0007": "exploring the environment (system, network, account enumeration)",
+    "TA0008": "moving to other systems in the network",
+    "TA0009": "gathering data of interest (files, screenshots, keylogging)",
+    "TA0011": "communicating with compromised systems (C2, tunneling)",
+    "TA0010": "stealing data out of the network",
+    "TA0040": "destroying, encrypting, or disrupting systems and data",
+}
+
 
 def _is_transient_error(error_text: str) -> bool:
     transient_markers = [
@@ -260,9 +280,18 @@ def identify_tactics(
     """
     TACTIC_LIST = tactic_list or DEFAULT_TACTIC_LIST
 
-    tactic_str = "\n".join(
-        [f"- {k}: {v}" for k, v in TACTIC_LIST.items()]
-    )
+    # Susun daftar taktik urut kill-chain + glosarium satu baris (prompt v2).
+    # Taktik di luar glosarium (kalau tactic_list kustom) ditambahkan tanpa definisi.
+    ordered_ids = [tid for tid in TACTIC_GLOSSARY if tid in TACTIC_LIST]
+    ordered_ids += [tid for tid in TACTIC_LIST if tid not in TACTIC_GLOSSARY]
+    tactic_lines = []
+    for tid in ordered_ids:
+        gloss = TACTIC_GLOSSARY.get(tid)
+        if gloss:
+            tactic_lines.append(f"- {tid}: {TACTIC_LIST[tid]} — {gloss}")
+        else:
+            tactic_lines.append(f"- {tid}: {TACTIC_LIST[tid]}")
+    tactic_str = "\n".join(tactic_lines)
 
     report_excerpt_size = LOCAL_LLM_REPORT_MAX_CHARS
     max_tokens = LOCAL_LLM_MAX_TOKENS_TACTIC
@@ -278,23 +307,32 @@ def identify_tactics(
         )
         revise_temperature = float(os.getenv("LLM_REVISE_TEMPERATURE", "0.4"))
 
-    prompt = f"""You are a CTI analyst mapping text to MITRE ATT&CK TACTICS (TA####) for the Enterprise matrix.
-Use only the tactics listed below.
+    prompt = f"""TASK: Identify every MITRE ATT&CK TACTIC (TA####) whose goal is pursued by the
+attacker in the report excerpt. Choose ONLY from the list below.
 
-Available Tactics:
+AVAILABLE TACTICS:
 {tactic_str}
 
-CTI Example:
-"Attackers sent spear-phishing emails with malicious attachments, then used PowerShell to run malware and contacted a C2 server."
-Expected output: {{"ids": ["TA0001","TA0002","TA0011"]}}
+DECISION RULES:
+1. Include a tactic ONLY if the report describes the attacker actually pursuing
+   that goal — not tool capabilities, IOC lists, or defensive recommendations.
+2. Scan the WHOLE excerpt sentence by sentence; multi-stage intrusions typically
+   involve 4-8 tactics. Do not stop after the first matches.
+3. If nothing applies, return {{"ids": []}}.
+
+EXAMPLE
+Report: "Attackers sent spear-phishing emails with malicious attachments, then
+used PowerShell to run malware, dumped LSASS memory, and contacted a C2 server."
+Output: {{"ids": ["TA0001","TA0002","TA0006","TA0011"]}}
+
+EXAMPLE (nothing applies)
+Report: "This advisory lists file hashes and recommends enabling MFA."
+Output: {{"ids": []}}
 {feedback_block}
-Report Excerpt:
+REPORT EXCERPT:
 \"\"\"{report_text[:report_excerpt_size]}\"\"\"
 
-Rules:
-1. Return ONLY a JSON object: {{"ids": ["TA....", ...]}} using tactic IDs from the list.
-2. If nothing applies, use an empty list: {{"ids": []}}.
-3. Do not add any explanation or extra text.
+Answer with ONLY the JSON object {{"ids": [...]}}.
 """
 
     system_prompt = "You are an expert CTI analyst. Map the text to MITRE ATT&CK Tactics. Output ONLY a JSON object {\"ids\": [...]} of tactic IDs, nothing else."

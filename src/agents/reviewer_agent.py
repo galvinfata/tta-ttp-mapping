@@ -192,19 +192,34 @@ def review_tactics_and_techniques(
 
     technique_summary = "\n".join(technique_lines) or "None"
 
-    prompt = (
-        "You are a MITRE ATT&CK reviewer. Decide whether the tactic(s) and technique(s) are consistent with the report.\n\n"
-        "Report excerpt:\n"
-        f"\"\"\"{report_excerpt}\"\"\"\n\n"
-        "Tactics:\n"
-        f"{tactics_summary}\n\n"
-        "Techniques:\n"
-        f"{technique_summary}\n\n"
-        "Instructions:\n"
-        "- If consistent, return {\"is_valid\": true, \"feedback\": \"\"}.\n"
-        "- If inconsistent, return {\"is_valid\": false, \"feedback\": \"short actionable correction\"}.\n"
-        "- Output only a JSON object. No extra text.\n"
-    )
+    prompt = f"""TASK: Review whether the tactics and techniques below are consistent with the
+report excerpt.
+
+REPORT EXCERPT:
+\"\"\"{report_excerpt}\"\"\"
+
+SELECTED TACTICS:
+{tactics_summary}
+
+SELECTED TECHNIQUES:
+{technique_summary}
+
+CHECKS:
+1. Every selected technique must correspond to a behavior described in the
+   report (not just a tool name, IOC, or recommendation).
+2. Every selected technique's tactic should appear in the selected tactics,
+   and every selected tactic should be supported by at least one technique
+   or an explicit statement in the report.
+3. Flag obvious omissions: a clearly described attacker behavior with no
+   matching technique selected.
+
+OUTPUT FORMAT:
+- If consistent: {{"is_valid": true, "feedback": ""}}
+- If not: {{"is_valid": false, "feedback": "<one short sentence: what to ADD or
+  REMOVE and why, e.g. 'Remove T1105: no download behavior described. Add
+  TA0003: registry Run key persistence is described.'>"}}
+Output only the JSON object.
+"""
 
     system_prompt = "You are a strict MITRE ATT&CK reviewer. Output only a JSON object, nothing else."
     if DISABLE_THINKING:
