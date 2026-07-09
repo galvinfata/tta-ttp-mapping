@@ -254,7 +254,9 @@ Output only the JSON object.
                     if attempt_model != attempt_models[-1]:
                         print(f"Pindah ke fallback model: {fallback_model}")
                         break
-                    return {"is_valid": False, "feedback": "Reviewer returned empty response."}
+                    # Kegagalan TEKNIS, bukan penolakan substantif: feedback wajib
+                    # kosong agar teks error tak pernah tersuntik ke prompt agen.
+                    return {"is_valid": False, "feedback": "", "error": "empty_response", "raw_response": ""}
 
                 try:
                     data = _extract_json_object(response_text)
@@ -278,7 +280,12 @@ Output only the JSON object.
                 if attempt_model != attempt_models[-1]:
                     print(f"Pindah ke fallback model: {fallback_model}")
                     break
-                return {"is_valid": False, "feedback": "Reviewer output was not valid JSON."}
+                return {
+                    "is_valid": False,
+                    "feedback": "",
+                    "error": "json_parse",
+                    "raw_response": (response_text or "")[:200],
+                }
 
             except Exception as e:
                 error_text = str(e).lower()
@@ -297,9 +304,14 @@ Output only the JSON object.
                     print(f"Pindah ke fallback model: {fallback_model}")
                     break
 
-                return {"is_valid": False, "feedback": "Reviewer error."}
+                return {
+                    "is_valid": False,
+                    "feedback": "",
+                    "error": f"exception: {str(e)[:120]}",
+                    "raw_response": "",
+                }
 
-    return {"is_valid": False, "feedback": "Reviewer failed after retries."}
+    return {"is_valid": False, "feedback": "", "error": "retries_exhausted", "raw_response": ""}
 
 
 if __name__ == "__main__":

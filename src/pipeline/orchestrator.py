@@ -28,6 +28,7 @@ class PipelineState(TypedDict):
     reviewer_feedback: str
     review_is_valid: bool
     review_iterations: int
+    reviewer_error_count: int
 
 
 def _input_report_node(state: PipelineState) -> PipelineState:
@@ -85,21 +86,54 @@ def _review_node(state: PipelineState) -> PipelineState:
             "review_iterations": state.get("review_iterations", 0) + 1,
         }
 
-    result = review_tactics_and_techniques(
-        model=reviewer_model,
-        report_text=state["report_text"],
-        tactics=state.get("tactics_identified", []),
-        techniques=state.get("techniques_raw", []),
-        attck_tactics=state.get("attck_tactics", {}),
-        attck_techniques=state.get("attck_techniques", {}),
-    )
+    iteration = state.get("review_iterations", 0) + 1
+    errors_this_round = 0
+
+    # Error TEKNIS (exception/timeout/JSON rusak/respons kosong) ≠ penolakan
+    # substantif. Coba maksimal 2x panggilan (1x retry); kalau tetap error,
+    # FAIL-OPEN: anggap valid agar pipeline lanjut ke post_process tanpa loop
+    # revisi palsu, dan feedback dikosongkan agar teks error tak masuk prompt.
+    result = {}
+    for call_idx in (1, 2):
+        result = review_tactics_and_techniques(
+            model=reviewer_model,
+            report_text=state["report_text"],
+            tactics=state.get("tactics_identified", []),
+            techniques=state.get("techniques_raw", []),
+            attck_tactics=state.get("attck_tactics", {}),
+            attck_techniques=state.get("attck_techniques", {}),
+        )
+        error_kind = result.get("error")
+        if not error_kind:
+            break
+        errors_this_round += 1
+        raw_excerpt = str(result.get("raw_response", ""))[:120]
+        print(
+            f"  [REVIEWER-ERROR] report={state.get('report_id', '')} "
+            f"iter={iteration} call={call_idx}/2 kind={error_kind} raw='{raw_excerpt}'"
+        )
+
+    error_count = state.get("reviewer_error_count", 0) + errors_this_round
+
+    if result.get("error"):
+        print(
+            f"  [REVIEWER-ERROR] report={state.get('report_id', '')} "
+            f"iter={iteration} fail-open: review dilewati (dianggap valid, tanpa feedback)"
+        )
+        return {
+            "review_is_valid": True,
+            "reviewer_feedback": "",
+            "review_iterations": iteration,
+            "reviewer_error_count": error_count,
+        }
 
     print(f"  Review: {result}")
 
     return {
         "review_is_valid": bool(result.get("is_valid")),
         "reviewer_feedback": result.get("feedback", ""),
-        "review_iterations": state.get("review_iterations", 0) + 1,
+        "review_iterations": iteration,
+        "reviewer_error_count": error_count,
     }
 
 
@@ -194,14 +228,20 @@ def process_report(
         "reviewer_feedback": "",
         "review_is_valid": False,
         "review_iterations": 0,
+        "reviewer_error_count": 0,
     }
 
     final_state = _PIPELINE.invoke(initial_state)
 
+    # Field telemetri reviewer bersifat ADITIF — jangan mengubah/merename field
+    # lama karena skrip re-scoring evaluasi membaca file results JSON ini.
+    reviewer_error_count = final_state.get("reviewer_error_count", 0)
     return {
         "report_id": final_state["report_id"],
         "predicted_techniques": final_state["predicted_techniques"],
         "ground_truth": final_state["ground_truth"],
         "tactics_identified": final_state["tactics_identified"],
         "stix_bundle": final_state["stix_bundle"],
+        "reviewer_error_count": reviewer_error_count,
+        "reviewer_errored": reviewer_error_count > 0,
     }
