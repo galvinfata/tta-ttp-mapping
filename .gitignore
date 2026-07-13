@@ -31,3 +31,8 @@ results/metrics/_emb_docs_cache.npz
 
 # Konfigurasi lokal Claude Code
 .claude/
+
+# Materi laporan TA — tidak dipublikasikan di repo
+BAB_IV_Evaluasi_terisi.md
+evaluation_results.xlsx
+evaluation_charts/
