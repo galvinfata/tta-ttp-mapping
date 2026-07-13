@@ -21,5 +21,13 @@ data/mitre_cti/*.json
 .DS_Store
 Thumbs.db
 
-# File lock sementara Office/Excel
+# File lock sementara Office/Excel (LibreOffice memakai pola .~lock.*#)
 ~$*
+.~lock.*#
+
+# Cache retrieval (dibangun ulang otomatis; besar & tidak perlu di-review)
+results/metrics/_candidates_top50*.json
+results/metrics/_emb_docs_cache.npz
+
+# Konfigurasi lokal Claude Code
+.claude/

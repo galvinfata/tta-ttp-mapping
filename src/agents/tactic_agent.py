@@ -18,6 +18,10 @@ DEBUG_MODE = os.getenv("DEBUG_AGENT", "false").lower() == "true"
 # Matikan reasoning/thinking pada model hybrid (Qwen3 dll.). Default true karena
 # thinking menghabiskan token budget dan membuat output JSON kosong.
 DISABLE_THINKING = os.getenv("LLM_DISABLE_THINKING", "true").lower() == "true"
+# Qwen3.5 mengabaikan enable_thinking=false & /no_think; di LM Studio reasoning
+# model itu dimatikan lewat parameter reasoning_effort="none". Kosongkan env
+# ini untuk tidak mengirim parameternya sama sekali.
+REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "none").strip()
 STRUCTURED_OUTPUT = os.getenv("LLM_STRUCTURED_OUTPUT", "true").lower() == "true"
 
 # JSON schema untuk structured output: objek {"ids": ["TA0001", ...]}.
@@ -93,6 +97,17 @@ def _is_transient_error(error_text: str) -> bool:
         "read timed out",
         "connection refused",
         "temporary failure",
+        # LM Studio kadang menolak request dengan 'Context size has been
+        # exceeded' padahal prompt muat (kondisi server sesaat setelah timeout
+        # menumpuk; lihat results/laporan_run_parsial_20260710.md bag. 5).
+        # Retry dengan backoff memberi server kesempatan pulih.
+        "context size has been exceeded",
+        # Error engine LM Studio saat model di-reload/unload di tengah run
+        # (mis. ganti context length dari GUI) — sembuh sendiri setelah
+        # model selesai dimuat ulang.
+        "predict request failed",
+        "fetch failed",
+        "model is unloaded",
     ]
     return any(marker in error_text for marker in transient_markers)
 
@@ -145,9 +160,10 @@ def _complete_chat(model: dict, attempt_model: str, system_prompt: str, user_pro
     # Nonaktifkan mode "thinking" pada model hybrid (Qwen3 dsb.) agar token tidak
     # habis untuk reasoning dan output JSON benar-benar dikembalikan.
     if DISABLE_THINKING:
-        create_kwargs["extra_body"] = {
-            "chat_template_kwargs": {"enable_thinking": False}
-        }
+        extra_body = {"chat_template_kwargs": {"enable_thinking": False}}
+        if REASONING_EFFORT:
+            extra_body["reasoning_effort"] = REASONING_EFFORT
+        create_kwargs["extra_body"] = extra_body
     if use_structured and STRUCTURED_OUTPUT:
         create_kwargs["response_format"] = _IDS_JSON_SCHEMA
 
@@ -159,8 +175,16 @@ def _complete_chat(model: dict, attempt_model: str, system_prompt: str, user_pro
         create_kwargs.pop("response_format", None)
         response = model["client"].chat.completions.create(**create_kwargs)
     except Exception as exc:
-        # Server menolak response_format (tidak mendukung json_schema) → ulang tanpa itu.
-        if "response_format" in create_kwargs:
+        error_text = str(exc).lower()
+        extra_body = create_kwargs.get("extra_body") or {}
+        if "reasoning" in error_text and "reasoning_effort" in extra_body:
+            # Server menolak parameter reasoning_effort → ulang tanpa itu.
+            if DEBUG_MODE:
+                print(f"[DEBUG] reasoning_effort ditolak, fallback: {str(exc)[:120]}")
+            extra_body.pop("reasoning_effort", None)
+            response = model["client"].chat.completions.create(**create_kwargs)
+        elif "response_format" in create_kwargs:
+            # Server menolak response_format (tidak mendukung json_schema) → ulang tanpa itu.
             if DEBUG_MODE:
                 print(f"[DEBUG] structured output ditolak, fallback plain: {str(exc)[:120]}")
             create_kwargs.pop("response_format", None)

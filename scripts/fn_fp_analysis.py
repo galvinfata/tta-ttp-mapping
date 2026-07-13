@@ -18,6 +18,7 @@ Offline & deterministik. Jalankan:
     python scripts/fn_fp_analysis.py
 """
 import json
+import os
 
 from eval_common import (
     ATTCK_SOURCE, DATA_DIR, METRICS_DIR, CANDIDATE_TOP_K, build_candidate_map,
@@ -25,7 +26,10 @@ from eval_common import (
 from knowledge.attck_loader import load_attck_techniques
 from knowledge.data_loader import load_tram_dataset
 
-FULL_SYSTEM_RESULTS = "results/predictions/results_all_20260531_190814.json"
+# Dapat di-override lewat env agar bisa menganalisis file hasil run lain.
+FULL_SYSTEM_RESULTS = os.getenv(
+    "FULL_SYSTEM_RESULTS", "results/predictions/results_all_20260531_190814.json"
+)
 
 
 def _load_stale_ids(stix_path: str) -> set:
@@ -62,8 +66,10 @@ def main():
     print(f"KB: {len(kb)} teknik | Laporan: {len(reports)} | Hasil sistem: {len(res)} | "
           f"ID stale (revoked/deprecated): {len(stale)}")
 
-    print("\nMerekonstruksi kandidat TF-IDF top-50 per laporan...")
-    candidate_map = build_candidate_map(reports, kb, top_k=CANDIDATE_TOP_K)
+    # Mode per-chunk mencerminkan kandidat yang benar-benar dilihat sistem
+    # (technique_agent memakai retrieval per-chunk sejak upgrade retrieval).
+    print("\nMerekonstruksi kandidat TF-IDF top-50 per chunk...")
+    candidate_map = build_candidate_map(reports, kb, top_k=CANDIDATE_TOP_K, per_chunk=True)
 
     fn_records, fp_records = [], []
     cat_counter = {"retrieval-miss": 0, "reasoning-miss": 0, "no-candidates": 0}
@@ -72,7 +78,9 @@ def main():
         rid = r["report_id"]
         pred = set(r.get("predicted_techniques", []))
         gt = set(r.get("ground_truth", []))
-        cand = set(candidate_map.get(rid, []))
+        cand = set()
+        for chunk_cands in candidate_map.get(rid, []):
+            cand.update(chunk_cands)
 
         # False Negatives: GT yang tak diprediksi -> kategorikan.
         for tid in sorted(gt - pred):
@@ -164,7 +172,7 @@ def main():
         "all_fn": fn_records,
         "all_fp": fp_records,
     }
-    out_path = METRICS_DIR / "fn_fp_examples.json"
+    out_path = METRICS_DIR / os.getenv("FN_FP_OUT", "fn_fp_examples.json")
     out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"\nDisimpan: {out_path}")
 

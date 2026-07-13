@@ -1,5 +1,14 @@
 import json
+import os
 from pathlib import Path
+
+# Panjang maksimum deskripsi teknik yang disimpan di KB. Deskripsi ini adalah
+# bahan utama retrieval TF-IDF; terlalu pendek membuat sub-teknik sulit
+# dibedakan dan menurunkan plafon recall retrieval (eksperimen offline: 1000
+# char optimal, naik dari 500). Prompt LLM tetap memotong ulang sesuai
+# CANDIDATE_DESC_CHARS, jadi menaikkan nilai ini tidak menambah konsumsi
+# context window model.
+ATTCK_DESC_MAX_CHARS = int(os.getenv("ATTCK_DESC_MAX_CHARS", "1000"))
 
 
 def _get_domain_from_source(file_path: Path, obj: dict) -> str:
@@ -86,7 +95,7 @@ def load_attck_techniques(attck_source: str) -> dict:
                 merged_tactics = sorted(set(existing.get("tactics", []) + tactics))
                 merged_domains = sorted(set(existing.get("domains", []) + [domain]))
                 description = existing.get("description", "")
-                new_description = obj.get("description", "")[:500]
+                new_description = obj.get("description", "")[:ATTCK_DESC_MAX_CHARS]
                 if len(new_description) > len(description):
                     description = new_description
 
@@ -99,7 +108,7 @@ def load_attck_techniques(attck_source: str) -> dict:
                 techniques[technique_id] = {
                     "id": technique_id,
                     "name": obj.get("name", ""),
-                    "description": obj.get("description", "")[:500],
+                    "description": obj.get("description", "")[:ATTCK_DESC_MAX_CHARS],
                     "tactics": sorted(set(tactics)),
                     "stix_id": obj.get("id", ""),
                     "domains": [domain],

@@ -7,11 +7,18 @@ from openai import OpenAI
 
 # Retrieval TF-IDF dipisah ke modul murni tanpa dependensi LLM agar bisa dipakai
 # ulang oleh skrip evaluasi offline. Di-import ulang di sini demi kompatibilitas.
+# Parameter chunking juga tinggal di agents.retrieval (satu sumber kebenaran
+# antara prompt LLM dan rekonstruksi kandidat skrip evaluasi).
 from agents.retrieval import (
     RETRIEVAL_MAX_CHARS,
     INCLUDE_SUBTECHNIQUES,
+    LOCAL_LLM_REPORT_MAX_CHARS,
+    CHUNK_OVERLAP_CHARS,
+    MAX_CHUNKS,
     _build_technique_document,
+    _chunk_text,
     _retrieve_candidate_techniques,
+    retrieve_candidates_per_chunk,
 )
 
 load_dotenv()
@@ -21,14 +28,10 @@ MAX_RETRIES_PER_MODEL = 3
 BASE_BACKOFF_SECONDS = 1.0
 REQUEST_TIMEOUT_SECONDS = int(os.getenv("LLM_REQUEST_TIMEOUT_SECONDS", "300"))
 DEFAULT_CANDIDATE_TOP_K = int(os.getenv("TECHNIQUE_CANDIDATE_TOP_K", "50"))
-# Ukuran chunk teks laporan yang dikirim ke LLM. Laporan panjang dipecah jadi
-# beberapa chunk (lihat _chunk_text) agar TTP di bagian akhir tidak hilang.
-# CATATAN: total prompt (daftar kandidat + chunk + output) harus muat di context
-# window model. Default ini dipilih agar aman untuk n_ctx 4096. Jika model
-# dimuat dengan context lebih besar di LM Studio, naikkan nilai-nilai ini.
-LOCAL_LLM_REPORT_MAX_CHARS = int(os.getenv("LOCAL_LLM_REPORT_MAX_CHARS", "3500"))
-CHUNK_OVERLAP_CHARS = int(os.getenv("LLM_CHUNK_OVERLAP_CHARS", "250"))
-MAX_CHUNKS = int(os.getenv("LLM_MAX_CHUNKS", "3"))
+# Ukuran chunk teks laporan (LOCAL_LLM_REPORT_MAX_CHARS dkk.) di-import dari
+# agents.retrieval. CATATAN: total prompt (daftar kandidat + chunk + output)
+# harus muat di context window model; default aman untuk n_ctx 4096. Jika model
+# dimuat dengan context lebih besar di LM Studio, naikkan lewat env.
 LOCAL_LLM_MAX_TOKENS_TECHNIQUE = int(os.getenv("LOCAL_LLM_MAX_TOKENS_TECHNIQUE", "512"))
 LOCAL_LLM_STRICT_JSON = os.getenv("LOCAL_LLM_STRICT_JSON", "true").lower() == "true"
 # Plafon kandidat teknik yang dilihat LLM. Dinaikkan dari 10 → 50: dengan 10,
@@ -39,8 +42,26 @@ LOCAL_LLM_CANDIDATE_TOP_K = int(os.getenv("LOCAL_LLM_CANDIDATE_TOP_K", "50"))
 CANDIDATE_DESC_CHARS = int(os.getenv("CANDIDATE_DESC_CHARS", "120"))
 CANDIDATE_LIST_MAX_CHARS = int(os.getenv("CANDIDATE_LIST_MAX_CHARS", "4500"))
 STRUCTURED_OUTPUT = os.getenv("LLM_STRUCTURED_OUTPUT", "true").lower() == "true"
+# Retrieval per-chunk: tiap potongan laporan mendapat daftar kandidatnya
+# sendiri (bukan satu daftar dari seluruh laporan yang dipakai semua chunk).
+# Menaikkan plafon recall retrieval efektif dari 20% -> 36% exact (lihat
+# agents/retrieval.py) tanpa menambah konsumsi context window per prompt.
+RETRIEVAL_PER_CHUNK = os.getenv("RETRIEVAL_PER_CHUNK", "true").lower() == "true"
+# Filter presisi: buang pilihan LLM yang TIDAK masuk top-N kandidat retrieval
+# chunk-nya. TP hampir selalu kandidat berperingkat tinggi; FP jenis
+# "mention-mapping" (nama teknik disebut di kalimat mitigasi) dan overreach
+# semantik menumpuk di peringkat bawah. Terukur offline pada batch 5 laporan
+# (2026-07-11): precision exact 0.244->0.304, F1 0.321->0.350 (recall
+# 0.471->0.412). Set 0 untuk menonaktifkan (model bebas memilih dari seluruh
+# kandidat yang tampil).
+TECHNIQUE_ACCEPT_TOP_N = int(os.getenv("TECHNIQUE_ACCEPT_TOP_N", "30"))
 DEBUG_MODE = os.getenv("DEBUG_AGENT", "false").lower() == "true"
 DISABLE_THINKING = os.getenv("LLM_DISABLE_THINKING", "true").lower() == "true"
+# Qwen3.5 mengabaikan enable_thinking=false & /no_think; di LM Studio reasoning
+# model itu dimatikan lewat parameter reasoning_effort="none" (terverifikasi
+# 2026-07-11: content kosong 512 token thinking -> JSON bersih 3 detik).
+# Kosongkan env ini untuk tidak mengirim parameternya sama sekali.
+REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "none").strip()
 
 
 def _strip_think_blocks(text: str) -> str:
@@ -71,6 +92,17 @@ def _is_transient_error(error_text: str) -> bool:
         "read timed out",
         "connection refused",
         "temporary failure",
+        # LM Studio kadang menolak request dengan 'Context size has been
+        # exceeded' padahal prompt muat (kondisi server sesaat setelah timeout
+        # menumpuk; lihat results/laporan_run_parsial_20260710.md bag. 5).
+        # Retry dengan backoff memberi server kesempatan pulih.
+        "context size has been exceeded",
+        # Error engine LM Studio saat model di-reload/unload di tengah run
+        # (mis. ganti context length dari GUI) — sembuh sendiri setelah
+        # model selesai dimuat ulang.
+        "predict request failed",
+        "fetch failed",
+        "model is unloaded",
     ]
     return any(marker in error_text for marker in transient_markers)
 
@@ -134,9 +166,10 @@ def _complete_chat(
         timeout=REQUEST_TIMEOUT_SECONDS,
     )
     if DISABLE_THINKING:
-        create_kwargs["extra_body"] = {
-            "chat_template_kwargs": {"enable_thinking": False}
-        }
+        extra_body = {"chat_template_kwargs": {"enable_thinking": False}}
+        if REASONING_EFFORT:
+            extra_body["reasoning_effort"] = REASONING_EFFORT
+        create_kwargs["extra_body"] = extra_body
     if use_structured and STRUCTURED_OUTPUT:
         create_kwargs["response_format"] = _IDS_JSON_SCHEMA
 
@@ -148,9 +181,17 @@ def _complete_chat(
         create_kwargs.pop("response_format", None)
         response = model["client"].chat.completions.create(**create_kwargs)
     except Exception as exc:
-        # Server menolak response_format (mis. tidak mendukung json_schema).
-        # Coba ulang tanpa structured output sebelum menyerah.
-        if "response_format" in create_kwargs:
+        error_text = str(exc).lower()
+        extra_body = create_kwargs.get("extra_body") or {}
+        if "reasoning" in error_text and "reasoning_effort" in extra_body:
+            # Server menolak parameter reasoning_effort → ulang tanpa itu.
+            if DEBUG_MODE:
+                print(f"[DEBUG] reasoning_effort ditolak, fallback: {str(exc)[:120]}")
+            extra_body.pop("reasoning_effort", None)
+            response = model["client"].chat.completions.create(**create_kwargs)
+        elif "response_format" in create_kwargs:
+            # Server menolak response_format (mis. tidak mendukung json_schema).
+            # Coba ulang tanpa structured output sebelum menyerah.
             if DEBUG_MODE:
                 print(f"[DEBUG] structured output ditolak, fallback plain: {str(exc)[:120]}")
             create_kwargs.pop("response_format", None)
@@ -229,24 +270,6 @@ def _extract_json_array(response_text: str) -> list:
     raise json.JSONDecodeError("Could not find JSON array in response", response_text, 0)
 
 
-def _chunk_text(text: str, chunk_size: int, overlap: int, max_chunks: int) -> list[str]:
-    """Pecah teks panjang menjadi beberapa chunk dengan overlap kecil.
-
-    Mengembalikan minimal satu chunk. Dibatasi max_chunks agar latency terkendali.
-    """
-    text = text or ""
-    if len(text) <= chunk_size:
-        return [text]
-
-    chunks = []
-    start = 0
-    step = max(1, chunk_size - overlap)
-    while start < len(text) and len(chunks) < max_chunks:
-        chunks.append(text[start:start + chunk_size])
-        start += step
-    return chunks
-
-
 def _extract_technique_ids_from_text(response_text: str, attck_techniques: dict) -> list[str]:
     """Fallback parser untuk output model non-JSON."""
     if not response_text or not response_text.strip():
@@ -268,6 +291,31 @@ def _extract_technique_ids_from_text(response_text: str, attck_techniques: dict)
             seen.add(technique_id)
     
     return valid_ids
+
+
+def _format_candidate_list(
+    candidate_technique_ids: list[str],
+    attck_techniques: dict,
+) -> tuple[str, set]:
+    """Format daftar kandidat hasil retrieval untuk prompt.
+
+    Deskripsi dipangkas dan daftar dibatasi anggaran karakter agar muat di
+    context window model (penting untuk model dengan n_ctx kecil seperti 4096).
+    Mengembalikan (teks daftar, himpunan ID yang benar-benar tampil).
+    """
+    technique_list = []
+    shown_candidate_ids = set()
+    used_chars = 0
+    for tid in candidate_technique_ids:
+        tdata = attck_techniques[tid]
+        desc = tdata["description"][:CANDIDATE_DESC_CHARS].replace("\n", " ")
+        line = f"- {tid}: {tdata['name']} — {desc}"
+        if used_chars + len(line) > CANDIDATE_LIST_MAX_CHARS and technique_list:
+            break
+        technique_list.append(line)
+        shown_candidate_ids.add(tid)
+        used_chars += len(line) + 1
+    return "\n".join(technique_list), shown_candidate_ids
 
 
 def extract_techniques(
@@ -297,49 +345,48 @@ def extract_techniques(
         )
         revise_temperature = float(os.getenv("LLM_REVISE_TEMPERATURE", "0.4"))
 
-    candidate_technique_ids = _retrieve_candidate_techniques(
-        report_text=report_text,
-        attck_techniques=attck_techniques,
-        top_k=top_k,
-    )
+    # Laporan panjang dipecah jadi beberapa chunk agar TTP di bagian akhir tidak
+    # hilang akibat pemotongan. Hasil tiap chunk digabung (union) dengan menjaga
+    # urutan. Default: retrieval PER-CHUNK — tiap chunk mendapat daftar kandidat
+    # yang relevan dengan potongannya sendiri (plafon recall efektif naik dari
+    # 20% -> 36% exact; lihat agents/retrieval.py). Set RETRIEVAL_PER_CHUNK=false
+    # untuk perilaku lama (satu daftar kandidat dari seluruh laporan).
+    if RETRIEVAL_PER_CHUNK:
+        chunk_candidates = retrieve_candidates_per_chunk(
+            report_text=report_text,
+            attck_techniques=attck_techniques,
+            top_k=top_k,
+        )
+    else:
+        candidate_technique_ids = _retrieve_candidate_techniques(
+            report_text=report_text,
+            attck_techniques=attck_techniques,
+            top_k=top_k,
+        )
+        chunks = _chunk_text(
+            report_text,
+            chunk_size=LOCAL_LLM_REPORT_MAX_CHARS,
+            overlap=CHUNK_OVERLAP_CHARS,
+            max_chunks=MAX_CHUNKS,
+        )
+        chunk_candidates = [(chunk, candidate_technique_ids) for chunk in chunks]
 
-    if not candidate_technique_ids:
+    if not any(cands for _, cands in chunk_candidates):
         return []
 
-    # Format daftar kandidat teknik hasil retrieval untuk prompt.
-    # Deskripsi dipangkas dan daftar dibatasi anggaran karakter agar muat di
-    # context window model (penting untuk model dengan n_ctx kecil seperti 4096).
-    technique_list = []
-    shown_candidate_ids = set()
-    used_chars = 0
-    for tid in candidate_technique_ids:
-        tdata = attck_techniques[tid]
-        desc = tdata["description"][:CANDIDATE_DESC_CHARS].replace("\n", " ")
-        line = f"- {tid}: {tdata['name']} — {desc}"
-        if used_chars + len(line) > CANDIDATE_LIST_MAX_CHARS and technique_list:
-            break
-        technique_list.append(line)
-        shown_candidate_ids.add(tid)
-        used_chars += len(line) + 1
-    technique_str = "\n".join(technique_list)
-    
     max_tokens = LOCAL_LLM_MAX_TOKENS_TECHNIQUE
     system_prompt = "You are an expert CTI analyst. Map the text to MITRE ATT&CK Techniques. Output ONLY a JSON object {\"ids\": [...]} of technique IDs from the candidate list, nothing else."
     if DISABLE_THINKING:
         system_prompt += " /no_think"
 
-    # Laporan panjang dipecah jadi beberapa chunk agar TTP di bagian akhir tidak
-    # hilang akibat pemotongan. Hasil tiap chunk digabung (union) dengan menjaga urutan.
-    chunks = _chunk_text(
-        report_text,
-        chunk_size=LOCAL_LLM_REPORT_MAX_CHARS,
-        overlap=CHUNK_OVERLAP_CHARS,
-        max_chunks=MAX_CHUNKS,
-    )
-
     seen = set()
     aggregated: list[str] = []
-    for chunk in chunks:
+    for chunk, candidate_technique_ids in chunk_candidates:
+        if not candidate_technique_ids:
+            continue
+        technique_str, shown_candidate_ids = _format_candidate_list(
+            candidate_technique_ids, attck_techniques
+        )
         prompt = f"""TASK: Select every MITRE ATT&CK technique from CANDIDATES that is described in
 the report excerpt. You MUST choose only from CANDIDATES. Never output an ID
 that is not in the list.
@@ -387,6 +434,9 @@ Answer with ONLY the JSON object {{"ids": [...]}}.
             temperature=revise_temperature,
             allowed_ids=shown_candidate_ids,
         )
+        if TECHNIQUE_ACCEPT_TOP_N > 0:
+            accepted = set(candidate_technique_ids[:TECHNIQUE_ACCEPT_TOP_N])
+            chunk_techniques = [t for t in chunk_techniques if t in accepted]
         for tid in chunk_techniques:
             if tid not in seen:
                 seen.add(tid)

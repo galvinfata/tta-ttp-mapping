@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TTP Mapping — Batch Evaluation</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap");
+
+    :root {
+      --bg-0: #05080f;
+      --bg-1: #0a0f1a;
+      --panel: rgba(15, 22, 36, 0.82);
+      --panel-2: rgba(11, 17, 28, 0.9);
+      --border: rgba(60, 224, 214, 0.16);
+      --border-soft: rgba(120, 150, 180, 0.12);
+      --ink: #d7e4f2;
+      --muted: #6b829a;
+      --accent: #29e3d6;
+      --accent-2: #5b8cff;
+      --accent-glow: rgba(41, 227, 214, 0.35);
+      --danger: #ff5d6c;
+      --ok: #38e08b;
+      --mono: "JetBrains Mono", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "IBM Plex Sans", "Space Grotesk", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% -10%, rgba(91, 140, 255, 0.12), transparent 40%),
+        radial-gradient(circle at 88% 0%, rgba(41, 227, 214, 0.12), transparent 42%),
+        linear-gradient(180deg, var(--bg-1), var(--bg-0));
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(90, 120, 160, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(90, 120, 160, 0.05) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 28px;
+      background: rgba(5, 8, 15, 0.72);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .brand .dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 12px var(--accent-glow);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+    .brand small {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: 0.7rem;
+      border: 1px solid var(--border);
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .nav .links { display: flex; gap: 10px; }
+    .nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      padding: 8px 14px;
+      border: 1px solid var(--border-soft);
+      border-radius: 8px;
+      transition: all 180ms ease;
+    }
+    .nav a:hover { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 34px 24px 80px;
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      animation: rise 600ms ease;
+    }
+
+    header h1 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: clamp(1.6rem, 3vw, 2.3rem);
+      margin: 0 0 6px;
+      letter-spacing: -0.01em;
+    }
+    header h1 .accent { color: var(--accent); }
+    header p { margin: 0; color: var(--muted); }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px;
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(16px);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::after {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      opacity: 0.5;
+    }
+    .card h2 {
+      font-family: "Space Grotesk", sans-serif;
+      margin: 0 0 12px;
+      font-size: 1.15rem;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .card h2::before {
+      content: "";
+      width: 6px; height: 18px; border-radius: 2px;
+      background: var(--accent); box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    label { display: block; font-weight: 500; margin: 12px 0 6px; font-size: 0.9rem; color: var(--ink); }
+
+    input[type="number"] {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border-soft);
+      padding: 10px 12px;
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      background: rgba(5, 9, 16, 0.7);
+      color: var(--ink);
+      transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(41, 227, 214, 0.12);
+    }
+
+    .button {
+      padding: 12px 18px;
+      border-radius: 10px;
+      border: 1px solid var(--accent);
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      background: rgba(41, 227, 214, 0.12);
+      color: var(--accent);
+      letter-spacing: 0.02em;
+      transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+    }
+    .button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      background: rgba(41, 227, 214, 0.2);
+      box-shadow: 0 0 18px var(--accent-glow);
+    }
+    .button.secondary {
+      border-color: var(--accent-2);
+      background: rgba(91, 140, 255, 0.12);
+      color: #aebfff;
+    }
+    .button.secondary:hover:not(:disabled) { box-shadow: 0 0 18px rgba(91, 140, 255, 0.35); }
+    .button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .status {
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(5, 9, 16, 0.7);
+      border: 1px solid var(--border-soft);
+      border-left: 3px solid var(--accent);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--ink);
+    }
+
+    .footer { margin-top: 10px; font-size: 0.82rem; color: var(--muted); }
+
+    .batch-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 14px;
+    }
+    .batch-controls .field { min-width: 130px; }
+    .batch-controls label { margin-top: 0; }
+    .check-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      color: var(--ink);
+      padding: 10px 0;
+      cursor: pointer;
+    }
+    .check-inline input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+    .progress-track {
+      margin-top: 16px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(5, 9, 16, 0.8);
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent-2), var(--accent));
+      box-shadow: 0 0 14px var(--accent-glow);
+      transition: width 600ms ease;
+    }
+    .progress-fill.pulsing { animation: pulse 1.6s ease-in-out infinite; }
+
+    .chips {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .chip {
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: rgba(11, 17, 28, 0.7);
+    }
+    .chip strong {
+      display: block;
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .chip .vals { display: flex; gap: 14px; font-family: var(--mono); font-size: 0.86rem; }
+    .chip .vals span small { display: block; color: var(--muted); font-size: 0.68rem; }
+
+    .batch-table-wrap { margin-top: 16px; max-height: 420px; overflow: auto; border: 1px solid var(--border-soft); border-radius: 12px; }
+    table.batch-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.8rem; }
+    .batch-table th, .batch-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-soft); }
+    .batch-table th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; }
+    .batch-table td.num { text-align: right; }
+    .batch-table td .ok { color: var(--ok); }
+    .batch-table td .bad { color: var(--danger); }
+
+    @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    @media (max-width: 720px) {
+      .app { padding: 26px 16px 60px; }
+      .nav { padding: 14px 18px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="brand">
+      <span class="dot"></span>
+      TTP&nbsp;Mapping <small>BATCH</small>
+    </div>
+    <div class="links">
+      <a href="/">&#8592; Home</a>
+      <a href="/app">Analysis Console</a>
+    </div>
+  </nav>
+
+  <div class="app">
+    <header>
+      <h1>Batch <span class="accent">Evaluation</span></h1>
+      <p>Jalankan seluruh (atau sebagian) dataset TRAM II dengan sekali klik. Progres, laporan yang sedang diproses, dan metrik precision/recall/F1 tampil live.</p>
+    </header>
+
+    <section class="card">
+      <h2>Konfigurasi Run</h2>
+
+      <div class="batch-controls">
+        <div class="field">
+          <label for="batchCount">Jumlah laporan</label>
+          <input id="batchCount" type="number" min="1" value="5" />
+        </div>
+        <label class="check-inline"><input id="batchAll" type="checkbox" /> Semua laporan (<span id="batchTotalAvail">?</span>)</label>
+        <label class="check-inline"><input id="batchReviewer" type="checkbox" /> Aktifkan Reviewer (debate loop)</label>
+        <button id="batchStartBtn" class="button">&#9655; Jalankan Batch</button>
+        <button id="batchCancelBtn" class="button secondary" disabled>&#9633; Hentikan</button>
+      </div>
+
+      <div class="progress-track"><div id="batchProgressFill" class="progress-fill"></div></div>
+      <div id="batchStatusLine" class="status" style="margin-top:12px;">Idle. Belum ada evaluasi batch.</div>
+      <div class="footer">Hasil disimpan incremental tiap 5 laporan — run yang terputus tidak kehilangan hasil. Menutup tab tidak menghentikan run; buka lagi halaman ini untuk menyambung ke progres.</div>
+    </section>
+
+    <section class="card">
+      <h2>Metrik Live</h2>
+      <div class="chips" style="margin-top:4px;">
+        <div class="chip">
+          <strong>Teknik — Exact</strong>
+          <div class="vals">
+            <span id="mExP">-<small>Precision</small></span>
+            <span id="mExR">-<small>Recall</small></span>
+            <span id="mExF">-<small>F1</small></span>
+            <span id="mExA">-<small>Accuracy</small></span>
+          </div>
+        </div>
+        <div class="chip">
+          <strong>Teknik — Base</strong>
+          <div class="vals">
+            <span id="mBaP">-<small>Precision</small></span>
+            <span id="mBaR">-<small>Recall</small></span>
+            <span id="mBaF">-<small>F1</small></span>
+            <span id="mBaA">-<small>Accuracy</small></span>
+          </div>
+        </div>
+        <div class="chip">
+          <strong>Taktik</strong>
+          <div class="vals">
+            <span id="mTaP">-<small>Precision</small></span>
+            <span id="mTaR">-<small>Recall</small></span>
+            <span id="mTaF">-<small>F1</small></span>
+            <span id="mTaA">-<small>Accuracy</small></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Hasil Per Laporan</h2>
+      <div class="batch-table-wrap">
+        <table class="batch-table">
+          <thead>
+            <tr><th>#</th><th>Laporan</th><th>Pred</th><th>GT</th><th>TP</th><th>FP</th><th>FN</th></tr>
+          </thead>
+          <tbody id="batchTableBody">
+            <tr><td colspan="7" style="color:var(--muted);">Belum ada hasil.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="batchOutputInfo" class="footer"></div>
+    </section>
+  </div>
+
+  <script>
+    const batchCount = document.getElementById("batchCount");
+    const batchAll = document.getElementById("batchAll");
+    const batchReviewer = document.getElementById("batchReviewer");
+    const batchStartBtn = document.getElementById("batchStartBtn");
+    const batchCancelBtn = document.getElementById("batchCancelBtn");
+    const batchProgressFill = document.getElementById("batchProgressFill");
+    const batchStatusLine = document.getElementById("batchStatusLine");
+    const batchTableBody = document.getElementById("batchTableBody");
+    const batchTotalAvail = document.getElementById("batchTotalAvail");
+    const batchOutputInfo = document.getElementById("batchOutputInfo");
+
+    const BATCH_POLL_MS = 3000;
+    let batchPolling = false;
+
+    function fmtDur(seconds) {
+      const s = Math.max(0, Math.floor(seconds));
+      const h = Math.floor(s / 3600);
+      const m = Math.floor((s % 3600) / 60);
+      if (h > 0) return `${h}j ${m}m`;
+      return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
+    }
+
+    function setMetric(idPrefix, m, keys) {
+      const [p, r, f, a] = keys;
+      const fmt = v => (v === null || v === undefined) ? "-" : v.toFixed(3);
+      document.getElementById(idPrefix + "P").firstChild.textContent = m ? fmt(m[p]) : "-";
+      document.getElementById(idPrefix + "R").firstChild.textContent = m ? fmt(m[r]) : "-";
+      document.getElementById(idPrefix + "F").firstChild.textContent = m ? fmt(m[f]) : "-";
+      document.getElementById(idPrefix + "A").firstChild.textContent = m ? fmt(m[a]) : "-";
+    }
+
+    function renderBatch(st) {
+      const running = st.status === "running";
+      batchStartBtn.disabled = running;
+      batchCancelBtn.disabled = !running;
+      batchProgressFill.classList.toggle("pulsing", running);
+
+      const pct = st.total > 0 ? (100 * st.done / st.total) : 0;
+      batchProgressFill.style.width = `${pct.toFixed(1)}%`;
+
+      let line;
+      if (st.status === "idle") {
+        line = "Idle. Belum ada evaluasi batch.";
+      } else {
+        const elapsed = st.started_at ? ((st.finished_at || Date.now() / 1000) - st.started_at) : 0;
+        let eta = "";
+        if (running && st.done > 0) {
+          const remaining = (elapsed / st.done) * (st.total - st.done);
+          eta = ` | ETA ~${fmtDur(remaining)}`;
+        }
+        const label = {
+          running: `Memproses laporan ${st.current_index}/${st.total}: "${st.current_report}"`,
+          done: `Selesai — ${st.done}/${st.total} laporan dievaluasi.`,
+          cancelled: `Dihentikan — ${st.done} laporan selesai dievaluasi & tersimpan.`,
+          error: `Error: ${st.error || "unknown"}`,
+        }[st.status] || st.status;
+        const revTag = st.reviewer ? " | Reviewer: ON" : "";
+        line = `${label} | Berjalan ${fmtDur(elapsed)}${eta}${revTag}`;
+      }
+      batchStatusLine.textContent = line;
+
+      setMetric("mEx", st.metrics, ["precision", "recall", "micro_f1", "accuracy"]);
+      setMetric("mBa", st.metrics, ["base_precision", "base_recall", "base_micro_f1", "base_accuracy"]);
+      setMetric("mTa", st.tactic_metrics, ["tactic_precision", "tactic_recall", "tactic_micro_f1", "tactic_accuracy"]);
+
+      const rows = (st.rows || []).slice().reverse();
+      if (rows.length === 0) {
+        batchTableBody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);">Belum ada hasil.</td></tr>';
+      } else {
+        batchTableBody.innerHTML = rows.map(r => `
+          <tr>
+            <td class="num">${r.index}</td>
+            <td>${r.report_id}</td>
+            <td class="num">${r.pred}</td>
+            <td class="num">${r.gt}</td>
+            <td class="num"><span class="ok">${r.tp}</span></td>
+            <td class="num"><span class="bad">${r.fp}</span></td>
+            <td class="num">${r.fn}</td>
+          </tr>`).join("");
+      }
+
+      batchOutputInfo.textContent = st.output_path ? `Hasil tersimpan (incremental): ${st.output_path}` : "";
+    }
+
+    async function pollBatch() {
+      if (batchPolling) return;
+      batchPolling = true;
+      try {
+        while (true) {
+          let st;
+          try {
+            const res = await fetch("/api/batch/status");
+            st = await res.json();
+          } catch (err) {
+            await new Promise(r => setTimeout(r, BATCH_POLL_MS));
+            continue;
+          }
+          renderBatch(st);
+          if (st.status !== "running") return;
+          await new Promise(r => setTimeout(r, BATCH_POLL_MS));
+        }
+      } finally {
+        batchPolling = false;
+      }
+    }
+
+    batchAll.addEventListener("change", () => {
+      batchCount.disabled = batchAll.checked;
+    });
+
+    batchStartBtn.addEventListener("click", async () => {
+      const count = batchAll.checked ? "all" : parseInt(batchCount.value, 10);
+      if (!batchAll.checked && (!count || count < 1)) {
+        batchStatusLine.textContent = "Isi jumlah laporan yang valid (>= 1) atau centang 'Semua'.";
+        return;
+      }
+      batchStartBtn.disabled = true;
+      batchStatusLine.textContent = "Memulai evaluasi batch...";
+      try {
+        const res = await fetch("/api/batch/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ count: count, reviewer: batchReviewer.checked }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          batchStatusLine.textContent = `Gagal memulai: ${err.detail || res.status}`;
+          batchStartBtn.disabled = false;
+          return;
+        }
+        pollBatch();
+      } catch (err) {
+        batchStatusLine.textContent = `Gagal memulai: ${err}`;
+        batchStartBtn.disabled = false;
+      }
+    });
+
+    batchCancelBtn.addEventListener("click", async () => {
+      batchCancelBtn.disabled = true;
+      try {
+        await fetch("/api/batch/cancel", { method: "POST" });
+        batchStatusLine.textContent = "Menghentikan... (menunggu laporan yang sedang diproses selesai)";
+      } catch (err) { /* diabaikan; polling akan menampilkan status */ }
+    });
+
+    // Saat halaman dibuka: ambil info dataset + reattach ke run yang sedang jalan.
+    (async () => {
+      try {
+        const res = await fetch("/api/batch/info");
+        const info = await res.json();
+        batchTotalAvail.textContent = info.total_reports;
+        batchCount.max = info.total_reports;
+      } catch (err) { batchTotalAvail.textContent = "?"; }
+      try {
+        const res = await fetch("/api/batch/status");
+        const st = await res.json();
+        if (st.status !== "idle") renderBatch(st);
+        if (st.status === "running") pollBatch();
+      } catch (err) { /* server baru start, biarkan idle */ }
+    })();
+  </script>
+</body>
+</html>

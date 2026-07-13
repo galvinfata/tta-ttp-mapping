@@ -34,7 +34,7 @@ def _majority_base_ranking(reports):
     return [tid for tid, _ in sorted(counter.items(), key=lambda kv: (-kv[1], kv[0]))]
 
 
-def _verify_full_system(y_true):
+def _verify_full_system(y_true, n_labels_exact=None, n_labels_base=None):
     """Verifikasi metrik set-murni mereproduksi angka sistem penuh."""
     try:
         res = json.load(open(FULL_SYSTEM_RESULTS, encoding="utf-8"))
@@ -43,7 +43,7 @@ def _verify_full_system(y_true):
         return None
     yt = [r.get("ground_truth", []) for r in res]
     yp = [r.get("predicted_techniques", []) for r in res]
-    m = both_modes(yt, yp)
+    m = both_modes(yt, yp, n_labels_exact=n_labels_exact, n_labels_base=n_labels_base)
     e, b = m["exact"], m["base"]
     ok = (
         e["tp"] == 137 and e["fp"] == 650 and e["fn"] == 1806
@@ -65,7 +65,9 @@ def main():
     y_true = [r["techniques"] for r in reports]
 
     # Verifikasi lebih dulu (kriteria terima).
-    full_system = _verify_full_system(y_true)
+    n_labels_exact = len(attck_techniques)
+    n_labels_base = len({base_technique(t) for t in attck_techniques})
+    full_system = _verify_full_system(y_true, n_labels_exact, n_labels_base)
 
     # Retrieval top-50 sekali per laporan; top-N = slice pertama.
     print("\nMenghitung kandidat TF-IDF top-50 per laporan...")
@@ -79,8 +81,8 @@ def main():
         tfidf_pred = [c[:n] for c in candidates_ordered]
         maj_pred = [majority_ranking[:n] for _ in reports]
         sweep[n] = {
-            "tfidf": both_modes(y_true, tfidf_pred),
-            "majority": both_modes(y_true, maj_pred),
+            "tfidf": both_modes(y_true, tfidf_pred, n_labels_exact, n_labels_base),
+            "majority": both_modes(y_true, maj_pred, n_labels_exact, n_labels_base),
         }
 
     # N terbaik untuk baseline TF-IDF = F1 base tertinggi.

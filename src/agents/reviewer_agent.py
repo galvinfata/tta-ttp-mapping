@@ -15,6 +15,10 @@ LOCAL_LLM_REPORT_MAX_CHARS = int(os.getenv("LOCAL_LLM_REPORT_MAX_CHARS", "2000")
 LOCAL_LLM_MAX_TOKENS_REVIEWER = int(os.getenv("LOCAL_LLM_MAX_TOKENS_REVIEWER", "512"))
 DEBUG_MODE = os.getenv("DEBUG_AGENT", "false").lower() == "true"
 DISABLE_THINKING = os.getenv("LLM_DISABLE_THINKING", "true").lower() == "true"
+# Qwen3.5 mengabaikan enable_thinking=false & /no_think; di LM Studio reasoning
+# model itu dimatikan lewat parameter reasoning_effort="none". Kosongkan env
+# ini untuk tidak mengirim parameternya sama sekali.
+REASONING_EFFORT = os.getenv("LLM_REASONING_EFFORT", "none").strip()
 
 
 def _strip_think_blocks(text: str) -> str:
@@ -45,6 +49,17 @@ def _is_transient_error(error_text: str) -> bool:
         "read timed out",
         "connection refused",
         "temporary failure",
+        # LM Studio kadang menolak request dengan 'Context size has been
+        # exceeded' padahal prompt muat (kondisi server sesaat setelah timeout
+        # menumpuk; lihat results/laporan_run_parsial_20260710.md bag. 5).
+        # Retry dengan backoff memberi server kesempatan pulih.
+        "context size has been exceeded",
+        # Error engine LM Studio saat model di-reload/unload di tengah run
+        # (mis. ganti context length dari GUI) — sembuh sendiri setelah
+        # model selesai dimuat ulang.
+        "predict request failed",
+        "fetch failed",
+        "model is unloaded",
     ]
     return any(marker in error_text for marker in transient_markers)
 
@@ -85,15 +100,25 @@ def _complete_chat(model: dict, attempt_model: str, system_prompt: str, user_pro
         timeout=REQUEST_TIMEOUT_SECONDS,
     )
     if DISABLE_THINKING:
-        create_kwargs["extra_body"] = {
-            "chat_template_kwargs": {"enable_thinking": False}
-        }
+        extra_body = {"chat_template_kwargs": {"enable_thinking": False}}
+        if REASONING_EFFORT:
+            extra_body["reasoning_effort"] = REASONING_EFFORT
+        create_kwargs["extra_body"] = extra_body
 
     try:
         response = model["client"].chat.completions.create(**create_kwargs)
     except TypeError:
         create_kwargs.pop("extra_body", None)
         response = model["client"].chat.completions.create(**create_kwargs)
+    except Exception as exc:
+        error_text = str(exc).lower()
+        extra_body = create_kwargs.get("extra_body") or {}
+        if "reasoning" in error_text and "reasoning_effort" in extra_body:
+            # Server menolak parameter reasoning_effort → ulang tanpa itu.
+            extra_body.pop("reasoning_effort", None)
+            response = model["client"].chat.completions.create(**create_kwargs)
+        else:
+            raise
 
     message = response.choices[0].message
     content = _strip_think_blocks((message.content or "").strip())

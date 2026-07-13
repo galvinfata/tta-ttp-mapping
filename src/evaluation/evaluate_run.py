@@ -26,7 +26,7 @@ ATTCK_SOURCE = os.getenv("ATTCK_SOURCE", "data/mitre_cti/enterprise-attack.json"
 
 
 def _print_metrics(results: list[dict], attck_techniques: dict) -> None:
-    tech = evaluate_predictions(results)
+    tech = evaluate_predictions(results, attck_techniques)
     tac = evaluate_tactics(results, attck_techniques)
 
     print("\n=== METRIK ===")
@@ -35,14 +35,17 @@ def _print_metrics(results: list[dict], attck_techniques: dict) -> None:
     print(f"  Precision : {tech['precision']}")
     print(f"  Recall    : {tech['recall']}")
     print(f"  Micro-F1  : {tech['micro_f1']}")
+    print(f"  Accuracy  : {tech['accuracy']}")
     print("--- Teknik (base-technique, abaikan sub) ---")
     print(f"  Precision : {tech['base_precision']}")
     print(f"  Recall    : {tech['base_recall']}")
     print(f"  Micro-F1  : {tech['base_micro_f1']}")
+    print(f"  Accuracy  : {tech['base_accuracy']}")
     print("--- Taktik (GT diturunkan dari teknik) ---")
     print(f"  Precision : {tac['tactic_precision']}")
     print(f"  Recall    : {tac['tactic_recall']}")
     print(f"  Micro-F1  : {tac['tactic_micro_f1']}")
+    print(f"  Accuracy  : {tac['tactic_accuracy']}")
 
 
 def _run_live(n: int, attck_techniques: dict, attck_tactics: dict) -> list[dict]:

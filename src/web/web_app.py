@@ -2,7 +2,9 @@ import json
 import os
 import sys
 import threading
+import time
 import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -14,6 +16,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.append(str(PROJECT_ROOT / "src"))
 
 from knowledge.attck_loader import load_attck_tactics, load_attck_techniques
+from knowledge.data_loader import load_tram_dataset
+from evaluation.evaluator import evaluate_predictions, evaluate_tactics, save_results
 from reporting.evidence import build_evidence_map
 from pipeline.orchestrator import process_report
 from reporting.report_builder import build_pdf_report
@@ -24,6 +28,7 @@ from agents.reviewer_agent import create_reviewer_agent
 
 WEB_UI_PATH = PROJECT_ROOT / "web_ui" / "index.html"
 WEB_UI_APP_PATH = PROJECT_ROOT / "web_ui" / "app.html"
+WEB_UI_BATCH_PATH = PROJECT_ROOT / "web_ui" / "batch.html"
 ATTCK_SOURCE = os.getenv("ATTCK_SOURCE", str(PROJECT_ROOT / "data" / "mitre_cti" / "enterprise-attack.json"))
 WEB_UI_ENABLE_REVIEWER = os.getenv("WEB_UI_ENABLE_REVIEWER", "false").lower() == "true"
 
@@ -41,7 +46,111 @@ APP_STATE: dict[str, Any] = {
 
 JOBS: dict[str, dict[str, Any]] = {}
 
+TRAM_DATA_DIR = os.getenv("TRAM_DATA_DIR", str(PROJECT_ROOT / "data" / "tram_ii"))
+# Simpan hasil batch ke file setiap N laporan agar run panjang yang terputus
+# tidak kehilangan hasil (sama seperti main.py).
+BATCH_SAVE_EVERY = 5
+
+# State evaluasi batch (satu run aktif dalam satu waktu). Semua field selain
+# "lock" dan "cancel" aman dikirim ke frontend lewat /api/batch/status.
+BATCH: dict[str, Any] = {
+    "status": "idle",  # idle | running | done | cancelled | error
+    "total": 0,
+    "done": 0,
+    "current_index": 0,
+    "current_report": "",
+    "started_at": None,
+    "finished_at": None,
+    "reviewer": False,
+    "rows": [],
+    "metrics": None,
+    "tactic_metrics": None,
+    "output_path": None,
+    "error": None,
+    "cancel": False,
+    "lock": threading.Lock(),
+}
+
 app = FastAPI(title="TTP Mapping PoC")
+
+
+def _batch_row(index: int, result: dict) -> dict:
+    """Ringkasan satu laporan untuk tabel progres UI (metrik exact)."""
+    pred = set(result.get("predicted_techniques", []))
+    gt = set(result.get("ground_truth", []))
+    return {
+        "index": index,
+        "report_id": str(result.get("report_id", "")).strip()[:90],
+        "pred": len(pred),
+        "gt": len(gt),
+        "tp": len(pred & gt),
+        "fp": len(pred - gt),
+        "fn": len(gt - pred),
+    }
+
+
+def _run_batch(n_reports: int, use_reviewer: bool) -> None:
+    """Worker thread: jalankan pipeline atas n laporan TRAM + evaluasi live."""
+    try:
+        _ensure_initialized()
+        reports = load_tram_dataset(TRAM_DATA_DIR)[:n_reports]
+
+        reviewer_model = APP_STATE["reviewer_model"]
+        if use_reviewer and reviewer_model is None:
+            reviewer_model = create_reviewer_agent()
+
+        output_path = str(
+            PROJECT_ROOT / "results" / "predictions" /
+            f"results_web_{datetime.now():%Y%m%d_%H%M%S}.json"
+        )
+        BATCH.update({
+            "total": len(reports),
+            "output_path": output_path,
+        })
+
+        results: list[dict] = []
+        for i, report in enumerate(reports, 1):
+            if BATCH["cancel"]:
+                BATCH["status"] = "cancelled"
+                break
+
+            BATCH.update({
+                "current_index": i,
+                "current_report": str(report.get("id", "")).strip()[:120],
+            })
+
+            result = process_report(
+                report=report,
+                attck_techniques=APP_STATE["attck_techniques"],
+                attck_tactics=APP_STATE["attck_tactics"],
+                tactic_model=APP_STATE["tactic_model"],
+                technique_model=APP_STATE["technique_model"],
+                reviewer_model=reviewer_model,
+            )
+            results.append(result)
+
+            # Update progres + metrik berjalan setelah tiap laporan selesai.
+            BATCH["rows"].append(_batch_row(i, result))
+            BATCH["metrics"] = evaluate_predictions(
+                results, APP_STATE["attck_techniques"]
+            )
+            BATCH["tactic_metrics"] = evaluate_tactics(
+                results, APP_STATE["attck_techniques"]
+            )
+            BATCH["done"] = i
+
+            if i % BATCH_SAVE_EVERY == 0:
+                save_results(results, output_path)
+
+        if results:
+            save_results(results, output_path)
+        if BATCH["status"] == "running":
+            BATCH["status"] = "done"
+    except Exception as exc:
+        BATCH["status"] = "error"
+        BATCH["error"] = str(exc)
+    finally:
+        BATCH["finished_at"] = time.time()
 
 
 def _ensure_initialized() -> None:
@@ -220,6 +329,13 @@ def app_console():
     return FileResponse(WEB_UI_APP_PATH)
 
 
+@app.get("/batch")
+def batch_page():
+    if not WEB_UI_BATCH_PATH.exists():
+        raise HTTPException(status_code=404, detail="Halaman batch tidak ditemukan.")
+    return FileResponse(WEB_UI_BATCH_PATH)
+
+
 @app.post("/api/process")
 def process(
     report_file: UploadFile | None = File(default=None),
@@ -241,6 +357,83 @@ def process(
     worker = threading.Thread(target=_run_job, args=(job_id, report), daemon=True)
     worker.start()
     return {"job_id": job_id}
+
+
+@app.get("/api/batch/info")
+def batch_info():
+    """Info dataset untuk form UI (jumlah total laporan TRAM tersedia)."""
+    try:
+        total = len(load_tram_dataset(TRAM_DATA_DIR))
+    except FileNotFoundError:
+        total = 0
+    return {"total_reports": total, "status": BATCH["status"]}
+
+
+@app.post("/api/batch/start")
+def batch_start(payload: dict | None = None):
+    payload = payload or {}
+    with BATCH["lock"]:
+        if BATCH["status"] == "running":
+            raise HTTPException(status_code=409, detail="Evaluasi batch sedang berjalan.")
+
+        try:
+            total_available = len(load_tram_dataset(TRAM_DATA_DIR))
+        except FileNotFoundError:
+            raise HTTPException(status_code=500, detail=f"Dataset TRAM tidak ditemukan di {TRAM_DATA_DIR}.")
+        if total_available == 0:
+            raise HTTPException(status_code=500, detail="Dataset TRAM kosong.")
+
+        count = payload.get("count", "all")
+        if isinstance(count, str) and count.lower() in ("all", "semua"):
+            n_reports = total_available
+        else:
+            try:
+                n_reports = int(count)
+            except (TypeError, ValueError):
+                raise HTTPException(status_code=400, detail="count harus angka atau 'all'.")
+            if n_reports <= 0:
+                raise HTTPException(status_code=400, detail="count harus > 0.")
+            n_reports = min(n_reports, total_available)
+
+        use_reviewer = bool(payload.get("reviewer", False))
+
+        # Reset state run sebelumnya.
+        BATCH.update({
+            "status": "running",
+            "total": n_reports,
+            "done": 0,
+            "current_index": 0,
+            "current_report": "(memuat knowledge base...)",
+            "started_at": time.time(),
+            "finished_at": None,
+            "reviewer": use_reviewer,
+            "rows": [],
+            "metrics": None,
+            "tactic_metrics": None,
+            "output_path": None,
+            "error": None,
+            "cancel": False,
+        })
+
+    worker = threading.Thread(
+        target=_run_batch, args=(n_reports, use_reviewer), daemon=True
+    )
+    worker.start()
+    return {"status": "running", "total": n_reports, "reviewer": use_reviewer}
+
+
+@app.get("/api/batch/status")
+def batch_status():
+    snapshot = {k: v for k, v in BATCH.items() if k not in ("lock", "cancel")}
+    return JSONResponse(snapshot)
+
+
+@app.post("/api/batch/cancel")
+def batch_cancel():
+    if BATCH["status"] != "running":
+        raise HTTPException(status_code=409, detail="Tidak ada evaluasi batch yang berjalan.")
+    BATCH["cancel"] = True
+    return {"status": "cancelling", "detail": "Berhenti setelah laporan yang sedang diproses selesai."}
 
 
 @app.get("/api/status/{job_id}")

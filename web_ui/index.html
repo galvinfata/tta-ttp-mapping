@@ -136,7 +136,10 @@
       <span class="dot"></span>
       TTP&nbsp;Mapping <small>SYSTEM</small>
     </div>
-    <a class="nav-cta" href="/app">Buka Console &#8594;</a>
+    <div style="display:flex; gap:10px;">
+      <a class="nav-cta" href="/app">Console</a>
+      <a class="nav-cta" href="/batch">Batch</a>
+    </div>
   </nav>
 
   <div class="wrap">
@@ -150,8 +153,28 @@
         lengkap dengan validasi analis dan ekspor STIX 2.1 serta laporan PDF.
       </p>
       <div class="cta-row">
-        <a class="btn btn-primary" href="/app">&#9655; Mulai Analisis</a>
+        <a class="btn btn-primary" href="#pilih-mode">&#9655; Mulai</a>
         <a class="btn btn-ghost" href="#cara-kerja">Lihat Cara Kerja</a>
+      </div>
+    </section>
+
+    <!-- MODE CHOOSER -->
+    <section class="section" id="pilih-mode">
+      <h2 class="section-title">Pilih Mode</h2>
+      <p class="section-sub">Analisis satu laporan milikmu sendiri, atau evaluasi otomatis seluruh dataset.</p>
+      <div class="cards" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+        <a class="feat mode-card" href="/app" style="text-decoration:none; color:inherit;">
+          <div class="ico">&#128196;</div>
+          <h3>Analysis Console</h3>
+          <p>Upload / tempel <b>laporan CTI-mu sendiri</b> (.txt, .json, .pdf), petakan ke ATT&amp;CK, validasi hasilnya, lalu ekspor STIX 2.1 &amp; PDF.</p>
+          <p style="margin-top:14px; font-family:var(--mono); color:var(--accent); font-size:0.85rem;">Buka Console &#8594;</p>
+        </a>
+        <a class="feat mode-card" href="/batch" style="text-decoration:none; color:inherit;">
+          <div class="ico">&#128200;</div>
+          <h3>Batch Evaluation</h3>
+          <p>Jalankan <b>seluruh dataset TRAM II</b> (atau sebagian) dengan sekali klik — progress bar live, metrik precision/recall/F1 real-time, dan tabel hasil per laporan.</p>
+          <p style="margin-top:14px; font-family:var(--mono); color:var(--accent); font-size:0.85rem;">Buka Batch Evaluation &#8594;</p>
+        </a>
       </div>
     </section>
 
@@ -214,7 +237,8 @@
       </div>
 
       <div class="cta-row" style="margin-top: 42px;">
-        <a class="btn btn-primary" href="/app">&#9655; Buka Analysis Console</a>
+        <a class="btn btn-primary" href="/app">&#9655; Analysis Console</a>
+        <a class="btn btn-ghost" href="/batch">&#128200; Batch Evaluation</a>
       </div>
     </section>
 

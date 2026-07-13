@@ -166,6 +166,7 @@
     }
 
     input[type="text"],
+    input[type="number"],
     textarea {
       width: 100%;
       border-radius: 10px;
@@ -286,6 +287,76 @@
       overflow: auto;
     }
 
+    /* --- Batch evaluation --- */
+    .batch-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      gap: 14px;
+    }
+    .batch-controls .field { min-width: 130px; }
+    .batch-controls label { margin-top: 0; }
+    .check-inline {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.88rem;
+      color: var(--ink);
+      padding: 10px 0;
+      cursor: pointer;
+    }
+    .check-inline input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+
+    .progress-track {
+      margin-top: 16px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(5, 9, 16, 0.8);
+      border: 1px solid var(--border-soft);
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent-2), var(--accent));
+      box-shadow: 0 0 14px var(--accent-glow);
+      transition: width 600ms ease;
+    }
+    .progress-fill.pulsing { animation: pulse 1.6s ease-in-out infinite; }
+
+    .chips {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .chip {
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: rgba(11, 17, 28, 0.7);
+    }
+    .chip strong {
+      display: block;
+      font-family: var(--mono);
+      color: var(--accent);
+      font-size: 0.72rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .chip .vals { display: flex; gap: 14px; font-family: var(--mono); font-size: 0.86rem; }
+    .chip .vals span small { display: block; color: var(--muted); font-size: 0.68rem; }
+
+    .batch-table-wrap { margin-top: 16px; max-height: 300px; overflow: auto; border: 1px solid var(--border-soft); border-radius: 12px; }
+    table.batch-table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 0.8rem; }
+    .batch-table th, .batch-table td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border-soft); }
+    .batch-table th { position: sticky; top: 0; background: var(--panel-2); color: var(--muted); font-weight: 500; text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.05em; }
+    .batch-table td.num { text-align: right; }
+    .batch-table td .ok { color: var(--ok); }
+    .batch-table td .bad { color: var(--danger); }
+
     @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -302,7 +373,10 @@
       <span class="dot"></span>
       TTP&nbsp;Mapping <small>CONSOLE</small>
     </div>
-    <a href="/">&#8592; Home</a>
+    <div style="display:flex; gap:10px;">
+      <a href="/">&#8592; Home</a>
+      <a href="/batch">Batch Evaluation</a>
+    </div>
   </nav>
 
   <div class="app">
@@ -586,6 +660,7 @@
       setStatus("Menyiapkan PDF...");
       window.open(`/api/report/${currentJobId}.pdf`, "_blank");
     });
+
   </script>
 </body>
 </html>
