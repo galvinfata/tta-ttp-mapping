@@ -11,6 +11,8 @@ from agents.technique_agent import create_technique_agent
 from agents.reviewer_agent import create_reviewer_agent
 from pipeline.orchestrator import process_report
 from evaluation.evaluator import evaluate_predictions, evaluate_tactics, save_results
+from agents.prompt_budget import format_prompt_stats
+from utils.run_manifest import RunRecorder
 
 # Simpan hasil ke file setiap N laporan agar run panjang yang terputus
 # (Ctrl+C, server mati) tidak kehilangan seluruh hasil — pelajaran dari run
@@ -52,7 +54,7 @@ def validate_setup() -> bool:
     if provider == "lmstudio" and not has_local_base_url:
         ok = False
         print("[SETUP] LOCAL_LLM_BASE_URL belum di-set untuk mode LM Studio.")
-        print("        Isi di .env, contoh: LOCAL_LLM_BASE_URL=http://100.100.211.39:1234")
+        print("        Isi di .env, contoh: LOCAL_LLM_BASE_URL=http://localhost:1234")
 
     if not ok:
         print("\nSetup belum lengkap. Perbaiki dulu, lalu jalankan lagi: python main.py")
@@ -134,7 +136,7 @@ def main():
     print("\n3. Inisialisasi agen...")
     tactic_model = create_tactic_agent()
     technique_model = create_technique_agent()
-    reviewer_enable = os.getenv("REVIEWER_ENABLE", "false").lower() == "true"
+    reviewer_enable = os.getenv("REVIEWER_ENABLE", "true").lower() == "true"
     reviewer_model = create_reviewer_agent() if reviewer_enable else None
     if reviewer_enable:
         print("   Reviewer (multi-agent debate loop) AKTIF")
@@ -142,6 +144,7 @@ def main():
 
     # 4. Proses laporan
     print("\n4. Memproses laporan CTI...")
+    recorder = RunRecorder(entrypoint="main.py")
     results = []
     # Nama file ber-timestamp agar run baru tidak menimpa hasil run sebelumnya.
     output_path = (
@@ -194,8 +197,15 @@ def main():
     print(f"  Micro-F1  : {tactic_metrics['tactic_micro_f1']}")
     print(f"  Accuracy  : {tactic_metrics['tactic_accuracy']}")
 
-    # 6. Simpan hasil
+    # 6. Simpan hasil + manifest run (konfigurasi efektif & statistik prompt)
     save_results(results, output_path)
+    print()
+    print(format_prompt_stats())
+    recorder.finalize(
+        results, output_path,
+        metrics={"technique": metrics, "tactic": tactic_metrics},
+        reviewer_enable_env=reviewer_enable,
+    )
 
 
 if __name__ == "__main__":

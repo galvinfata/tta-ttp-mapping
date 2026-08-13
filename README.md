@@ -76,7 +76,7 @@ python -m pip install -r requirements.txt
 Pastikan LM Studio server aktif (endpoint OpenAI-compatible). Buat `.env`:
 ```
 LLM_PROVIDER=lmstudio
-LOCAL_LLM_BASE_URL=http://100.100.211.39:1234
+LOCAL_LLM_BASE_URL=http://localhost:1234
 LOCAL_LLM_MODEL=qwen/qwen3-4b
 # LOCAL_LLM_API_KEY=...        # jika server butuh auth
 LLM_DISABLE_THINKING=true      # wajib true untuk model thinking (Qwen3); false untuk Qwen2.5

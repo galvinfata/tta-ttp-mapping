@@ -17,7 +17,12 @@ sys.path.append(str(PROJECT_ROOT / "src"))
 
 from knowledge.attck_loader import load_attck_tactics, load_attck_techniques
 from knowledge.data_loader import load_tram_dataset
-from evaluation.evaluator import evaluate_predictions, evaluate_tactics, save_results
+from evaluation.evaluator import (
+    derive_tactic_ground_truth,
+    evaluate_predictions,
+    evaluate_tactics,
+    save_results,
+)
 from reporting.evidence import build_evidence_map
 from pipeline.orchestrator import process_report
 from reporting.report_builder import build_pdf_report
@@ -25,12 +30,14 @@ from reporting.stix_builder import build_stix_bundle
 from agents.tactic_agent import create_tactic_agent
 from agents.technique_agent import create_technique_agent
 from agents.reviewer_agent import create_reviewer_agent
+from agents.prompt_budget import format_prompt_stats
+from utils.run_manifest import RunRecorder, write_manifest
 
 WEB_UI_PATH = PROJECT_ROOT / "web_ui" / "index.html"
 WEB_UI_APP_PATH = PROJECT_ROOT / "web_ui" / "app.html"
 WEB_UI_BATCH_PATH = PROJECT_ROOT / "web_ui" / "batch.html"
 ATTCK_SOURCE = os.getenv("ATTCK_SOURCE", str(PROJECT_ROOT / "data" / "mitre_cti" / "enterprise-attack.json"))
-WEB_UI_ENABLE_REVIEWER = os.getenv("WEB_UI_ENABLE_REVIEWER", "false").lower() == "true"
+WEB_UI_ENABLE_REVIEWER = os.getenv("WEB_UI_ENABLE_REVIEWER", "true").lower() == "true"
 
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 
@@ -47,12 +54,28 @@ APP_STATE: dict[str, Any] = {
 JOBS: dict[str, dict[str, Any]] = {}
 
 TRAM_DATA_DIR = os.getenv("TRAM_DATA_DIR", str(PROJECT_ROOT / "data" / "tram_ii"))
+# Manifest job satu-laporan tidak punya berkas hasil untuk ditumpangi, jadi
+# disimpan di direktori tersendiri (jalur batch menulis manifest berdampingan
+# dengan berkas hasilnya, sesuai konvensi run_manifest).
+JOB_MANIFEST_DIR = PROJECT_ROOT / "results" / "runs"
 # Simpan hasil batch ke file setiap N laporan agar run panjang yang terputus
 # tidak kehilangan hasil (sama seperti main.py).
 BATCH_SAVE_EVERY = 5
 
 # State evaluasi batch (satu run aktif dalam satu waktu). Semua field selain
 # "lock" dan "cancel" aman dikirim ke frontend lewat /api/batch/status.
+AGENT_KEYS = ("tactic", "technique", "reviewer", "reconciler")
+# Berapa event agent terakhir yang disimpan untuk live log di UI.
+AGENT_LOG_MAX = 60
+
+
+def _idle_agents() -> dict[str, dict[str, Any]]:
+    return {
+        key: {"status": "idle", "detail": "", "iteration": 0, "updated_at": None}
+        for key in AGENT_KEYS
+    }
+
+
 BATCH: dict[str, Any] = {
     "status": "idle",  # idle | running | done | cancelled | error
     "total": 0,
@@ -67,6 +90,9 @@ BATCH: dict[str, Any] = {
     "tactic_metrics": None,
     "output_path": None,
     "error": None,
+    # Status live tiap agent pada laporan yang sedang diproses + riwayat event.
+    "agents": _idle_agents(),
+    "agent_log": [],
     "cancel": False,
     "lock": threading.Lock(),
 }
@@ -74,10 +100,46 @@ BATCH: dict[str, Any] = {
 app = FastAPI(title="TTP Mapping PoC")
 
 
-def _batch_row(index: int, result: dict) -> dict:
-    """Ringkasan satu laporan untuk tabel progres UI (metrik exact)."""
+def _batch_row(index: int, result: dict, attck_techniques: dict, attck_tactics: dict) -> dict:
+    """Ringkasan satu laporan untuk tabel progres UI (metrik exact).
+
+    Selain hitungan pred/gt/tp/fp/fn, sertakan detail taktik & teknik yang
+    teridentifikasi (dengan nama + status hit/miss) supaya UI bisa menampilkan
+    popup "view" per laporan tanpa memuat ulang hasil dari file.
+    """
     pred = set(result.get("predicted_techniques", []))
     gt = set(result.get("ground_truth", []))
+
+    # GT taktik diturunkan dari GT teknik. Sejak 2026-08-08 field ini disimpan
+    # di hasil; berkas lama belum punya, jadi diturunkan on-the-fly agar UI
+    # tetap bisa menampilkan hit/miss taktik untuk run lama.
+    gt_tactics = set(
+        result.get("ground_truth_tactics")
+        or derive_tactic_ground_truth(sorted(gt), attck_techniques)
+    )
+    pred_tactics = result.get("tactics_identified", [])
+
+    tactics = [
+        {"id": tid, "name": attck_tactics.get(tid, ""), "hit": tid in gt_tactics}
+        for tid in pred_tactics
+    ]
+    missed_tactics = [
+        {"id": tid, "name": attck_tactics.get(tid, "")}
+        for tid in sorted(gt_tactics - set(pred_tactics))
+    ]
+    techniques = [
+        {
+            "id": tech_id,
+            "name": attck_techniques.get(tech_id, {}).get("name", ""),
+            "hit": tech_id in gt,  # True = cocok ground truth (TP), False = FP
+        }
+        for tech_id in result.get("predicted_techniques", [])
+    ]
+    missed = [
+        {"id": tech_id, "name": attck_techniques.get(tech_id, {}).get("name", "")}
+        for tech_id in sorted(gt - pred)
+    ]
+
     return {
         "index": index,
         "report_id": str(result.get("report_id", "")).strip()[:90],
@@ -86,11 +148,50 @@ def _batch_row(index: int, result: dict) -> dict:
         "tp": len(pred & gt),
         "fp": len(pred - gt),
         "fn": len(gt - pred),
+        "tactics": tactics,
+        "missed_tactics": missed_tactics,
+        "techniques": techniques,
+        "missed": missed,
     }
+
+
+def _make_progress_cb(report_index: int, report_id: str):
+    """Callback yang dipanggil orchestrator tiap agent mulai/selesai.
+
+    Menulis status agent yang sedang berjalan + menambah baris ke live log.
+    Dipanggil dari worker thread yang sama dengan _run_batch.
+    """
+
+    def on_event(event: dict) -> None:
+        agent = event.get("agent", "")
+        if agent not in BATCH["agents"]:
+            return
+
+        status = event.get("status", "")
+        detail = event.get("detail", "")
+        BATCH["agents"][agent] = {
+            "status": status,
+            "detail": detail,
+            "iteration": event.get("iteration", 0),
+            "updated_at": time.time(),
+        }
+        BATCH["agent_log"] = (BATCH["agent_log"] + [{
+            "ts": time.time(),
+            "report_index": report_index,
+            "report_id": report_id,
+            "agent": agent,
+            "status": status,
+            "detail": detail,
+        }])[-AGENT_LOG_MAX:]
+
+    return on_event
 
 
 def _run_batch(n_reports: int, use_reviewer: bool) -> None:
     """Worker thread: jalankan pipeline atas n laporan TRAM + evaluasi live."""
+    recorder = RunRecorder(entrypoint="web_app._run_batch")
+    results: list[dict] = []
+    output_path = None
     try:
         _ensure_initialized()
         reports = load_tram_dataset(TRAM_DATA_DIR)[:n_reports]
@@ -108,15 +209,17 @@ def _run_batch(n_reports: int, use_reviewer: bool) -> None:
             "output_path": output_path,
         })
 
-        results: list[dict] = []
         for i, report in enumerate(reports, 1):
             if BATCH["cancel"]:
                 BATCH["status"] = "cancelled"
                 break
 
+            report_id = str(report.get("id", "")).strip()[:120]
             BATCH.update({
                 "current_index": i,
-                "current_report": str(report.get("id", "")).strip()[:120],
+                "current_report": report_id,
+                # Reset kartu agent tiap laporan baru.
+                "agents": _idle_agents(),
             })
 
             result = process_report(
@@ -126,11 +229,14 @@ def _run_batch(n_reports: int, use_reviewer: bool) -> None:
                 tactic_model=APP_STATE["tactic_model"],
                 technique_model=APP_STATE["technique_model"],
                 reviewer_model=reviewer_model,
+                progress_cb=_make_progress_cb(i, report_id),
             )
             results.append(result)
 
             # Update progres + metrik berjalan setelah tiap laporan selesai.
-            BATCH["rows"].append(_batch_row(i, result))
+            BATCH["rows"].append(_batch_row(
+                i, result, APP_STATE["attck_techniques"], APP_STATE["attck_tactics"]
+            ))
             BATCH["metrics"] = evaluate_predictions(
                 results, APP_STATE["attck_techniques"]
             )
@@ -150,7 +256,32 @@ def _run_batch(n_reports: int, use_reviewer: bool) -> None:
         BATCH["status"] = "error"
         BATCH["error"] = str(exc)
     finally:
+        # Manifest ditulis APAPUN hasil akhirnya (selesai, dibatalkan, atau
+        # error) selama ada hasil — inilah satu-satunya tempat status Reviewer,
+        # ukuran chunk, dan versi KB run batch tersimpan permanen. Sebelum ini,
+        # jalur batch tidak menyimpan status reviewer sama sekali sehingga
+        # konfigurasi run 11 Juli 2026 tidak bisa dibuktikan.
+        if results and output_path:
+            try:
+                print()
+                print(format_prompt_stats())
+                recorder.finalize(
+                    results, output_path,
+                    metrics={
+                        "technique": BATCH.get("metrics"),
+                        "tactic": BATCH.get("tactic_metrics"),
+                    },
+                    reviewer_requested=use_reviewer,
+                    batch_status=BATCH.get("status"),
+                    reports_requested=n_reports,
+                )
+            except Exception as manifest_exc:  # manifest gagal != run gagal
+                print(f"[WARN] Gagal menulis manifest batch: {manifest_exc}")
         BATCH["finished_at"] = time.time()
+        # Jangan tinggalkan kartu agent dalam keadaan "running" setelah run berhenti.
+        for key, agent in BATCH["agents"].items():
+            if agent.get("status") == "running":
+                BATCH["agents"][key] = {**agent, "status": "idle"}
 
 
 def _ensure_initialized() -> None:
@@ -272,19 +403,63 @@ def _read_upload(upload: UploadFile | None, report_text: str, report_id: str) ->
     return _build_report(report_id, report_text.strip())
 
 
-def _run_job(job_id: str, report: dict) -> None:
+def _get_reviewer_model():
+    """Reviewer model (lazy). Dibuat sekali lalu di-cache di APP_STATE."""
+    reviewer_model = APP_STATE["reviewer_model"]
+    if reviewer_model is None:
+        reviewer_model = create_reviewer_agent()
+        APP_STATE["reviewer_model"] = reviewer_model
+    return reviewer_model
+
+
+def _make_job_progress_cb(job: dict):
+    """Callback progres per-agent untuk satu job console (analog batch).
+
+    Menulis status agent yang sedang berjalan + menambah baris ke live log job.
+    """
+
+    def on_event(event: dict) -> None:
+        agent = event.get("agent", "")
+        if agent not in job["agents"]:
+            return
+
+        status = event.get("status", "")
+        detail = event.get("detail", "")
+        job["agents"][agent] = {
+            "status": status,
+            "detail": detail,
+            "iteration": event.get("iteration", 0),
+            "updated_at": time.time(),
+        }
+        job["agent_log"] = (job["agent_log"] + [{
+            "ts": time.time(),
+            "agent": agent,
+            "status": status,
+            "detail": detail,
+        }])[-AGENT_LOG_MAX:]
+
+    return on_event
+
+
+def _run_job(job_id: str, report: dict, use_reviewer: bool) -> None:
     job = JOBS[job_id]
     job["status"] = "running"
+    job["agents"] = _idle_agents()
+    job["agent_log"] = []
+    recorder = RunRecorder(entrypoint="web_app._run_job")
+    result: dict = {}
 
     try:
         _ensure_initialized()
+        reviewer_model = _get_reviewer_model() if use_reviewer else None
         result = process_report(
             report=report,
             attck_techniques=APP_STATE["attck_techniques"],
             attck_tactics=APP_STATE["attck_tactics"],
             tactic_model=APP_STATE["tactic_model"],
             technique_model=APP_STATE["technique_model"],
-            reviewer_model=APP_STATE["reviewer_model"],
+            reviewer_model=reviewer_model,
+            progress_cb=_make_job_progress_cb(job),
         )
 
         tactics = []
@@ -308,11 +483,38 @@ def _run_job(job_id: str, report: dict) -> None:
             "techniques": techniques,
             "stix_bundle": result.get("stix_bundle", {}),
             "report_text": report.get("text", ""),
+            # reviewer_used = permintaan pengguna; reviewer_active = bukti
+            # runtime bahwa reviewer benar-benar dipasang di pipeline.
+            "reviewer_used": use_reviewer,
+            "reviewer_active": bool(result.get("reviewer_invoked")),
+            "coverage_ratio": result.get("coverage_ratio"),
+            "report_chars": result.get("report_chars"),
         }
         job["status"] = "done"
     except Exception as exc:
         job["status"] = "error"
         job["error"] = str(exc)
+        recorder.record_failure(report.get("id", ""))
+    finally:
+        # Jangan tinggalkan kartu agent dalam keadaan "running" setelah job berhenti.
+        for key, agent in job.get("agents", {}).items():
+            if agent.get("status") == "running":
+                job["agents"][key] = {**agent, "status": "idle"}
+
+        # Manifest job satu-laporan (tanpa berkas hasil untuk ditumpangi).
+        try:
+            JOB_MANIFEST_DIR.mkdir(parents=True, exist_ok=True)
+            stem = JOB_MANIFEST_DIR / f"job_{datetime.now():%Y%m%d_%H%M%S}_{job_id[:8]}.json"
+            manifest = recorder.build(
+                [result] if result else [], stem,
+                reviewer_requested=use_reviewer,
+                job_status=job["status"],
+                report_id=report.get("id", ""),
+            )
+            write_manifest(stem, manifest)
+            job["manifest"] = manifest
+        except Exception as manifest_exc:
+            print(f"[WARN] Gagal menulis manifest job: {manifest_exc}")
 
 
 @app.get("/")
@@ -341,6 +543,7 @@ def process(
     report_file: UploadFile | None = File(default=None),
     report_text: str = Form(default=""),
     report_id: str = Form(default=""),
+    use_reviewer: bool = Form(default=True),
 ):
     report = _read_upload(report_file, report_text, report_id)
 
@@ -350,11 +553,15 @@ def process(
         "error": None,
         "result": None,
         "final": None,
+        "agents": _idle_agents(),
+        "agent_log": [],
     }
 
     # Jalankan di thread mandiri (daemon), bukan via BackgroundTasks yang menahan
     # worker threadpool request selama proses panjang (bisa bermenit-menit).
-    worker = threading.Thread(target=_run_job, args=(job_id, report), daemon=True)
+    worker = threading.Thread(
+        target=_run_job, args=(job_id, report, use_reviewer), daemon=True
+    )
     worker.start()
     return {"job_id": job_id}
 
@@ -412,6 +619,8 @@ def batch_start(payload: dict | None = None):
             "tactic_metrics": None,
             "output_path": None,
             "error": None,
+            "agents": _idle_agents(),
+            "agent_log": [],
             "cancel": False,
         })
 
@@ -441,7 +650,13 @@ async def status(job_id: str):
     job = JOBS.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job tidak ditemukan.")
-    return {"job_id": job_id, "status": job["status"], "error": job.get("error")}
+    return {
+        "job_id": job_id,
+        "status": job["status"],
+        "error": job.get("error"),
+        "agents": job.get("agents", {}),
+        "agent_log": job.get("agent_log", []),
+    }
 
 
 @app.get("/api/results/{job_id}")

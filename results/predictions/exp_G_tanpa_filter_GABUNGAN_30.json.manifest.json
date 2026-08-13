@@ -1,0 +1,152 @@
+{
+  "run_id": "merge_20260806_223459",
+  "entrypoint": "scripts/merge_partial_runs.py",
+  "preset": "G_tanpa_filter",
+  "status": "complete_merged",
+  "merged_from": [
+    {
+      "results_file": "results\\predictions\\exp_G_tanpa_filter_20260806_142143.json",
+      "run_id": "run_20260806_142143_22960",
+      "reports": 20,
+      "status_asli": "partial",
+      "started_at": "2026-08-06T14:21:43",
+      "duration_seconds": 3810.9,
+      "base_url": "http://192.168.50.2:1234",
+      "git_commit": "081567b35b0631cbdeda52603d5993804c190d8e"
+    },
+    {
+      "results_file": "results\\predictions\\exp_G_tanpa_filter_r21-30_20260806_220709.json",
+      "run_id": "run_20260806_220709_32160",
+      "reports": 10,
+      "status_asli": "complete",
+      "started_at": "2026-08-06T22:07:09",
+      "duration_seconds": 1653.0,
+      "base_url": "http://100.100.211.39:1234",
+      "git_commit": "081567b35b0631cbdeda52603d5993804c190d8e"
+    }
+  ],
+  "merge_warnings": [
+    "repo dalam keadaan dirty saat run — kode persis tidak terekam commit"
+  ],
+  "merge_note": "Digabung dari beberapa potongan run. Sah karena tiap laporan diproses independen dan seluruh variabel yang memengaruhi prediksi terverifikasi identik. Metrik dihitung ULANG dari hasil gabungan.",
+  "git": {
+    "commit": "081567b35b0631cbdeda52603d5993804c190d8e",
+    "dirty": true,
+    "branch": "main"
+  },
+  "env": {
+    "LLM_PROVIDER": "lmstudio",
+    "LOCAL_LLM_MODEL": "qwen/qwen3-4b",
+    "LOCAL_LLM_BASE_URL": "http://192.168.50.2:1234",
+    "LLM_N_CTX": 8192,
+    "PROMPT_BUDGET_ENFORCE": false,
+    "TECHNIQUE_CANDIDATE_TOP_K": "50",
+    "LOCAL_LLM_CANDIDATE_TOP_K": "50",
+    "CANDIDATE_LIST_MAX_CHARS": 12000,
+    "CANDIDATE_DESC_CHARS": 160,
+    "LOCAL_LLM_REPORT_MAX_CHARS": 8000,
+    "LLM_CHUNK_OVERLAP_CHARS": 250,
+    "LLM_MAX_CHUNKS": 3,
+    "RETRIEVAL_MAX_CHARS": 40000,
+    "RETRIEVAL_PER_CHUNK": "true",
+    "RETRIEVAL_NAME_BOOST": "true",
+    "RETRIEVAL_EXCLUDE_PRECOMPROMISE": "true",
+    "RETRIEVAL_EMBEDDING_HYBRID": "true",
+    "RETRIEVAL_EMBEDDING_MODEL": "text-embedding-nomic-embed-text-v1.5",
+    "RETRIEVAL_EMBEDDING_ALPHA": "0.5",
+    "RETRIEVAL_DOC_DESC_CHARS": "1000",
+    "ATTCK_DESC_MAX_CHARS": "1000",
+    "TECHNIQUE_ACCEPT_TOP_N": 0,
+    "CANDIDATE_SHUFFLE_SEED": "",
+    "RECONCILE_SUBTECH_FAMILY_CAP": "2",
+    "RECONCILE_TACTIC_FILTER": "false",
+    "REVIEWER_ENABLE": "false",
+    "WEB_UI_ENABLE_REVIEWER": "false",
+    "LLM_REVIEW_MAX_ITER": "2",
+    "LLM_REVISE_TEMPERATURE": "0.4",
+    "LLM_DISABLE_THINKING": "true",
+    "LLM_REASONING_EFFORT": "none",
+    "LLM_STRUCTURED_OUTPUT": "true",
+    "LOCAL_LLM_MAX_TOKENS_TECHNIQUE": "512",
+    "LOCAL_LLM_MAX_TOKENS_TACTIC": "512",
+    "LOCAL_LLM_MAX_TOKENS_REVIEWER": "512",
+    "LLM_REQUEST_TIMEOUT_SECONDS": "120",
+    "ATTCK_SOURCE": "data/mitre_cti/enterprise-attack.json"
+  },
+  "attck": {
+    "source": "D:\\XPersonal\\Kuliah\\Bismillah_TA\\PoC\\ttpmapping\\tta-ttp-mapping\\data\\mitre_cti\\enterprise-attack.json",
+    "sha256": "7f0993caaace193d1af714b306c2b110c539fa1e9807109d6e522f5605fa6282",
+    "version": "13.1"
+  },
+  "reports_processed": 30,
+  "reports_failed": 0,
+  "duration_seconds": 5463.9,
+  "metrics": {
+    "technique": {
+      "precision": 0.2094,
+      "recall": 0.4163,
+      "micro_f1": 0.2786,
+      "accuracy": 0.9519,
+      "jaccard": 0.166,
+      "base_precision": 0.301,
+      "base_recall": 0.5248,
+      "base_micro_f1": 0.3826,
+      "base_accuracy": 0.9012,
+      "base_jaccard": 0.2336,
+      "total_reports": 30
+    },
+    "tactic": {
+      "tactic_precision": 0.6378,
+      "tactic_recall": 0.6219,
+      "tactic_micro_f1": 0.6297,
+      "tactic_accuracy": 0.65,
+      "tactic_jaccard": 0.4473,
+      "total_reports": 30
+    }
+  },
+  "coverage_stats": {
+    "reports_with_coverage": 30,
+    "coverage_ratio_median": 0.9805,
+    "coverage_ratio_mean": 0.8633,
+    "coverage_ratio_min": 0.3224,
+    "reports_fully_read": 14,
+    "reports_below_60pct": 5,
+    "report_chars_median": 23966
+  },
+  "rank_alignment": {
+    "reports_with_ranks": 30,
+    "ranked_predictions": 767,
+    "predictions_without_rank": 40,
+    "filtered_out_by_accept_top_n": 0,
+    "mean_tfidf_rank": 20.03,
+    "median_tfidf_rank": 17,
+    "rank_buckets": {
+      "1-10": 272,
+      "11-20": 150,
+      "21-30": 140,
+      "31+": 205
+    },
+    "rank_bucket_pct": {
+      "1-10": 0.3546,
+      "11-20": 0.1956,
+      "21-30": 0.1825,
+      "31+": 0.2673
+    },
+    "pct_outside_top30": 0.2673
+  },
+  "embedding_runtime": {
+    "hybrid_requested": true,
+    "fallback_triggered": false,
+    "fallback_reason": null,
+    "retrieval_calls_hybrid": 81,
+    "retrieval_calls_tfidf_only": 0,
+    "pct_calls_hybrid": 1.0
+  },
+  "results_file": "results\\predictions\\exp_G_tanpa_filter_GABUNGAN_30.json",
+  "reviewer_active": false,
+  "reports_with_reviewer": 0,
+  "review_iterations_total": 0,
+  "reports_triggering_revision": 0,
+  "reviewer_error_reports": 0,
+  "reviewer_error_calls": 0
+}

@@ -13,6 +13,8 @@ from agents.technique_agent import create_technique_agent
 from agents.reviewer_agent import create_reviewer_agent
 from pipeline.orchestrator import process_report
 from evaluation.evaluator import evaluate_predictions, save_results
+from agents.prompt_budget import format_prompt_stats
+from utils.run_manifest import RunRecorder
 
 # Default fokus ke matrix Enterprise saja agar tidak tercampur teknik/taktik
 # Mobile & PRE (yang memunculkan ID taktik invalid seperti TA0027).
@@ -30,6 +32,7 @@ reviewer_model = create_reviewer_agent() if REVIEWER_ENABLE else None
 if REVIEWER_ENABLE:
     print('Reviewer (multi-agent debate loop) AKTIF')
 
+recorder = RunRecorder(entrypoint="scripts/run_full_pipeline.py")
 results = []
 start = time.time()
 for i, r in enumerate(reports, 1):
@@ -38,6 +41,7 @@ for i, r in enumerate(reports, 1):
         res = process_report(r, att, tactics, tactic_model, technique_model, reviewer_model)
     except Exception as e:
         print(f"[ERROR] processing {r['id']}: {e}")
+        recorder.record_failure(r.get('id', ''))
         res = {
             'report_id': r.get('id', ''),
             'predicted_techniques': [],
@@ -60,3 +64,7 @@ print('Precision:', metrics['precision'])
 print('Recall   :', metrics['recall'])
 print('Micro-F1 :', metrics['micro_f1'])
 print('Saved to', out_path)
+print()
+print(format_prompt_stats())
+recorder.finalize(results, out_path, metrics={'technique': metrics},
+                  reviewer_enable_env=REVIEWER_ENABLE)

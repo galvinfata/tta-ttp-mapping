@@ -1,0 +1,326 @@
+{
+  "label": "baseline_hibrida_perchunk",
+  "retrieval": {
+    "embedding_hybrid": true,
+    "mode": "per_chunk",
+    "signature": "v5:sublinear:desc1000:nameboost1:noprecomp1:chunk8000-250-3:emb1-a0.5-w700",
+    "top_k": 50
+  },
+  "dataset": {
+    "reports_evaluated": 30,
+    "reports_available": 151,
+    "subset": "first_n",
+    "kb_techniques": 607
+  },
+  "budget_matched_n": 20,
+  "budget_matched_note": "N=20 disetel BUDGET-MATCHED: rata-rata 19.8 prediksi/laporan pada exp_A_baseline_replikasi_20260806_111339.json (30 laporan)",
+  "majority_is_oracle": true,
+  "majority_ranking_top20": [
+    "T1027",
+    "T1059",
+    "T1071",
+    "T1090",
+    "T1140",
+    "T1055",
+    "T1083",
+    "T1105",
+    "T1082",
+    "T1003",
+    "T1070",
+    "T1106",
+    "T1204",
+    "T1005",
+    "T1078",
+    "T1543",
+    "T1021",
+    "T1053",
+    "T1057",
+    "T1570"
+  ],
+  "sweep_ns": [
+    3,
+    5,
+    10,
+    15,
+    20,
+    50
+  ],
+  "results": {
+    "3": {
+      "retrieval": {
+        "exact": {
+          "tp": 32,
+          "fp": 58,
+          "fn": 374,
+          "precision": 0.3556,
+          "recall": 0.0788,
+          "f1": 0.129,
+          "jaccard": 0.0795,
+          "accuracy": 0.9763
+        },
+        "base": {
+          "tp": 40,
+          "fp": 47,
+          "fn": 303,
+          "precision": 0.4598,
+          "recall": 0.1166,
+          "f1": 0.186,
+          "jaccard": 0.1116,
+          "accuracy": 0.9405
+        }
+      },
+      "majority_oracle": {
+        "exact": {
+          "tp": 16,
+          "fp": 74,
+          "fn": 390,
+          "precision": 0.1778,
+          "recall": 0.0394,
+          "f1": 0.0645,
+          "jaccard": 0.0356,
+          "accuracy": 0.9745
+        },
+        "base": {
+          "tp": 47,
+          "fp": 43,
+          "fn": 296,
+          "precision": 0.5222,
+          "recall": 0.137,
+          "f1": 0.2171,
+          "jaccard": 0.1225,
+          "accuracy": 0.9423
+        }
+      }
+    },
+    "5": {
+      "retrieval": {
+        "exact": {
+          "tp": 44,
+          "fp": 106,
+          "fn": 362,
+          "precision": 0.2933,
+          "recall": 0.1084,
+          "f1": 0.1583,
+          "jaccard": 0.0952,
+          "accuracy": 0.9743
+        },
+        "base": {
+          "tp": 56,
+          "fp": 83,
+          "fn": 287,
+          "precision": 0.4029,
+          "recall": 0.1633,
+          "f1": 0.2324,
+          "jaccard": 0.1393,
+          "accuracy": 0.9371
+        }
+      },
+      "majority_oracle": {
+        "exact": {
+          "tp": 37,
+          "fp": 113,
+          "fn": 369,
+          "precision": 0.2467,
+          "recall": 0.0911,
+          "f1": 0.1331,
+          "jaccard": 0.0719,
+          "accuracy": 0.9735
+        },
+        "base": {
+          "tp": 73,
+          "fp": 77,
+          "fn": 270,
+          "precision": 0.4867,
+          "recall": 0.2128,
+          "f1": 0.2961,
+          "jaccard": 0.1779,
+          "accuracy": 0.941
+        }
+      }
+    },
+    "10": {
+      "retrieval": {
+        "exact": {
+          "tp": 75,
+          "fp": 225,
+          "fn": 331,
+          "precision": 0.25,
+          "recall": 0.1847,
+          "f1": 0.2125,
+          "jaccard": 0.1171,
+          "accuracy": 0.9695
+        },
+        "base": {
+          "tp": 92,
+          "fp": 158,
+          "fn": 251,
+          "precision": 0.368,
+          "recall": 0.2682,
+          "f1": 0.3103,
+          "jaccard": 0.1806,
+          "accuracy": 0.9304
+        }
+      },
+      "majority_oracle": {
+        "exact": {
+          "tp": 81,
+          "fp": 219,
+          "fn": 325,
+          "precision": 0.27,
+          "recall": 0.1995,
+          "f1": 0.2295,
+          "jaccard": 0.1248,
+          "accuracy": 0.9701
+        },
+        "base": {
+          "tp": 130,
+          "fp": 170,
+          "fn": 213,
+          "precision": 0.4333,
+          "recall": 0.379,
+          "f1": 0.4044,
+          "jaccard": 0.2425,
+          "accuracy": 0.9349
+        }
+      }
+    },
+    "15": {
+      "retrieval": {
+        "exact": {
+          "tp": 90,
+          "fp": 360,
+          "fn": 316,
+          "precision": 0.2,
+          "recall": 0.2217,
+          "f1": 0.2103,
+          "jaccard": 0.1147,
+          "accuracy": 0.9629
+        },
+        "base": {
+          "tp": 112,
+          "fp": 243,
+          "fn": 231,
+          "precision": 0.3155,
+          "recall": 0.3265,
+          "f1": 0.3209,
+          "jaccard": 0.1859,
+          "accuracy": 0.9194
+        }
+      },
+      "majority_oracle": {
+        "exact": {
+          "tp": 109,
+          "fp": 341,
+          "fn": 297,
+          "precision": 0.2422,
+          "recall": 0.2685,
+          "f1": 0.2547,
+          "jaccard": 0.1422,
+          "accuracy": 0.965
+        },
+        "base": {
+          "tp": 178,
+          "fp": 272,
+          "fn": 165,
+          "precision": 0.3956,
+          "recall": 0.519,
+          "f1": 0.4489,
+          "jaccard": 0.2788,
+          "accuracy": 0.9257
+        }
+      }
+    },
+    "20": {
+      "retrieval": {
+        "exact": {
+          "tp": 109,
+          "fp": 491,
+          "fn": 297,
+          "precision": 0.1817,
+          "recall": 0.2685,
+          "f1": 0.2167,
+          "jaccard": 0.1179,
+          "accuracy": 0.9567
+        },
+        "base": {
+          "tp": 132,
+          "fp": 323,
+          "fn": 211,
+          "precision": 0.2901,
+          "recall": 0.3848,
+          "f1": 0.3308,
+          "jaccard": 0.1942,
+          "accuracy": 0.9092
+        }
+      },
+      "majority_oracle": {
+        "exact": {
+          "tp": 125,
+          "fp": 475,
+          "fn": 281,
+          "precision": 0.2083,
+          "recall": 0.3079,
+          "f1": 0.2485,
+          "jaccard": 0.1362,
+          "accuracy": 0.9585
+        },
+        "base": {
+          "tp": 219,
+          "fp": 381,
+          "fn": 124,
+          "precision": 0.365,
+          "recall": 0.6385,
+          "f1": 0.4645,
+          "jaccard": 0.2908,
+          "accuracy": 0.9141
+        }
+      }
+    },
+    "50": {
+      "retrieval": {
+        "exact": {
+          "tp": 176,
+          "fp": 1324,
+          "fn": 230,
+          "precision": 0.1173,
+          "recall": 0.4335,
+          "f1": 0.1847,
+          "jaccard": 0.1,
+          "accuracy": 0.9147
+        },
+        "base": {
+          "tp": 186,
+          "fp": 810,
+          "fn": 157,
+          "precision": 0.1867,
+          "recall": 0.5423,
+          "f1": 0.2778,
+          "jaccard": 0.1617,
+          "accuracy": 0.8355
+        }
+      },
+      "majority_oracle": {
+        "exact": {
+          "tp": 178,
+          "fp": 1292,
+          "fn": 228,
+          "precision": 0.1211,
+          "recall": 0.4384,
+          "f1": 0.1898,
+          "jaccard": 0.1015,
+          "accuracy": 0.9165
+        },
+        "base": {
+          "tp": 343,
+          "fp": 1127,
+          "fn": 0,
+          "precision": 0.2333,
+          "recall": 1.0,
+          "f1": 0.3784,
+          "jaccard": 0.2333,
+          "accuracy": 0.8083
+        }
+      }
+    }
+  }
+}

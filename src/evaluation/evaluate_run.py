@@ -20,7 +20,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from knowledge.attck_loader import load_attck_techniques, load_attck_tactics
-from evaluation.evaluator import evaluate_predictions, evaluate_tactics, save_results
+from evaluation.evaluator import (
+    derive_tactic_ground_truth,
+    evaluate_predictions,
+    evaluate_tactics,
+    save_results,
+)
 
 ATTCK_SOURCE = os.getenv("ATTCK_SOURCE", "data/mitre_cti/enterprise-attack.json")
 
@@ -52,12 +57,15 @@ def _run_live(n: int, attck_techniques: dict, attck_tactics: dict) -> list[dict]
     from knowledge.data_loader import load_tram_dataset
     from agents.tactic_agent import create_tactic_agent
     from agents.technique_agent import create_technique_agent
+    from agents.prompt_budget import format_prompt_stats
     from pipeline.orchestrator import process_report
+    from utils.run_manifest import RunRecorder
 
     reports = load_tram_dataset("data/tram_ii")[:n]
     tactic_model = create_tactic_agent()
     technique_model = create_technique_agent()
 
+    recorder = RunRecorder(entrypoint="src/evaluation/evaluate_run.py")
     results = []
     start = time.time()
     for i, r in enumerate(reports, 1):
@@ -66,10 +74,13 @@ def _run_live(n: int, attck_techniques: dict, attck_tactics: dict) -> list[dict]
             res = process_report(r, attck_techniques, attck_tactics, tactic_model, technique_model)
         except Exception as e:
             print(f"  [ERROR] {e}")
+            recorder.record_failure(r.get("id", ""))
+            gt = r.get("techniques", [])
             res = {
                 "report_id": r.get("id", ""),
                 "predicted_techniques": [],
-                "ground_truth": r.get("techniques", []),
+                "ground_truth": gt,
+                "ground_truth_tactics": derive_tactic_ground_truth(gt, attck_techniques),
                 "tactics_identified": [],
                 "stix_bundle": {"type": "bundle", "objects": []},
             }
@@ -80,6 +91,12 @@ def _run_live(n: int, attck_techniques: dict, attck_tactics: dict) -> list[dict]
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     out_path = f"results/predictions/eval_run_{ts}.json"
     save_results(results, out_path)
+    print()
+    print(format_prompt_stats())
+    # Reviewer tidak pernah dipasang di jalur live ini (process_report dipanggil
+    # tanpa reviewer_model) — manifest akan mencatat reviewer_active=false, dan
+    # itu memang kondisi runtime sebenarnya.
+    recorder.finalize(results, out_path)
     return results
 
 

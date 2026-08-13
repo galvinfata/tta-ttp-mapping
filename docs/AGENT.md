@@ -170,7 +170,7 @@ enterprise-attack.json (750 techniques, 14 tactics)
 
 ```ini
 # LM Studio Connection
-LOCAL_LLM_BASE_URL=http://100.100.211.39:1234
+LOCAL_LLM_BASE_URL=http://localhost:1234
 LOCAL_LLM_MODEL=qwen/qwen3-4b  # Default model for both agents
 
 # Optional: Per-Agent Model Override
@@ -367,7 +367,7 @@ DEBUG_AGENT=true python main.py
 Look untuk `[DEBUG] Model output` messages
 
 **Solution:**
-1. Check LM Studio connection: `curl http://100.100.211.39:1234/v1/models`
+1. Check LM Studio connection: `curl http://localhost:1234/v1/models`
 2. Reduce context: `LOCAL_LLM_REPORT_MAX_CHARS=300`
 3. Simplify prompt (sudah dilakukan)
 4. Check model availability at LM Studio
@@ -404,7 +404,7 @@ python scripts/run_full_pipeline.py
 
 ```bash
 # 1. Check LM Studio
-curl http://100.100.211.39:1234/v1/models
+curl http://localhost:1234/v1/models
 
 # 2. Check enterprise-attack.json load
 python -c "import json; d=json.load(open('data/mitre_cti/enterprise-attack.json')); print(f'Objects: {len(d[\"objects\"])}')"

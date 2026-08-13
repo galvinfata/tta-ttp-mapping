@@ -13,12 +13,15 @@ __pycache__/
 
 # Logs & run artifacts
 *.log
+*.err
+experiments/logs/
 
 # Large MITRE ATT&CK bundle (unduh ulang dari https://github.com/mitre-attack/attack-stix-data)
 data/mitre_cti/*.json
 
 # OS / editor
 .DS_Store
+DSStore
 Thumbs.db
 
 # File lock sementara Office/Excel (LibreOffice memakai pola .~lock.*#)
@@ -32,7 +35,40 @@ results/metrics/_emb_docs_cache.npz
 # Konfigurasi lokal Claude Code
 .claude/
 
-# Materi laporan TA — tidak dipublikasikan di repo
+# ---------------------------------------------------------------------------
+# Materi penulisan Tugas Akhir — tidak dipublikasikan di repo.
+# Repo ini memuat SISTEM dan bukti eksperimennya; naskah TA berada di luar.
+# ---------------------------------------------------------------------------
 BAB_IV_Evaluasi_terisi.md
+Abstrak_revisi.md
+Hasil_dan_Kesimpulan_revisi.md
+IV6_Communication.md
+Status_Revisi_TA_dan_Rencana.md
+docs/skripsi/
 evaluation_results.xlsx
 evaluation_charts/
+data_mentah_hasil_evaluasi.docx
+results/metrics/laporan_ttp_*.xlsx
+
+# Catatan kerja internal (jurnal progres, catatan keputusan harian)
+vault/
+
+# Laporan run internal yang sudah usang / digantikan eksperimen A–H
+results/laporan_run_parsial_*.md
+
+# ---------------------------------------------------------------------------
+# Hasil run mentah.
+# Yang di-publish HANYA berkas yang dirujuk experiments/HASIL_EKSPERIMEN.md:
+# preset A/E/F/G/H, probe, dan run pembanding 151 laporan (223544).
+# Sisa uji coba (eval_run_*, results_main_*, results_all_*, smoke_*, dll)
+# tidak dirujuk dokumen mana pun dan sengaja tidak disertakan.
+# ---------------------------------------------------------------------------
+results/predictions/eval_run_*.json
+results/predictions/results_main_*.json
+results/predictions/results_all_*.json
+results/predictions/smoke_reviewer_*.json
+results/predictions/partial_run_*.json
+results/predictions/results.json
+results/predictions/results_prev.json
+results/predictions/results_web_*.json
+!results/predictions/results_web_20260711_223544.json

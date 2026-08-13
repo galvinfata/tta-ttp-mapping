@@ -5,6 +5,8 @@ import time
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from agents.prompt_budget import check_budget, record_prompt
+
 load_dotenv()
 
 
@@ -114,7 +116,7 @@ def _is_transient_error(error_text: str) -> bool:
 
 def create_tactic_agent():
     """Inisialisasi LM Studio local server (OpenAI-compatible)."""
-    base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://100.100.211.39:1234").rstrip("/")
+    base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://localhost:1234").rstrip("/")
     model_name = os.getenv("LOCAL_LLM_MODEL", "qwen/qwen3-4b")
     api_key = os.getenv("LOCAL_LLM_API_KEY", "")
     fallback_model = os.getenv("LOCAL_LLM_FALLBACK_MODEL", "").strip() or None
@@ -362,6 +364,12 @@ Answer with ONLY the JSON object {{"ids": [...]}}.
     system_prompt = "You are an expert CTI analyst. Map the text to MITRE ATT&CK Tactics. Output ONLY a JSON object {\"ids\": [...]} of tactic IDs, nothing else."
     if DISABLE_THINKING:
         system_prompt += " /no_think"
+
+    # Catat konsumsi context window. Agen taktik tidak punya daftar kandidat
+    # yang bisa dipangkas (daftar taktik hanya 14 baris dan wajib utuh), jadi
+    # di sini instrumentasi bersifat CATAT-SAJA — ukuran prompt dikendalikan
+    # lewat LOCAL_LLM_REPORT_MAX_CHARS.
+    record_prompt("tactic", check_budget(system_prompt, prompt, max_tokens))
 
     attempt_models = [model["model"]]
     fallback_model = model.get("fallback_model")

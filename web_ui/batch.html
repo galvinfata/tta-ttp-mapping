@@ -272,6 +272,234 @@
     .batch-table td .ok { color: var(--ok); }
     .batch-table td .bad { color: var(--danger); }
 
+    .view-btn {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 7px;
+      border: 1px solid var(--accent);
+      background: rgba(41, 227, 214, 0.1);
+      color: var(--accent);
+      cursor: pointer;
+      transition: background 150ms ease, box-shadow 150ms ease;
+    }
+    .view-btn:hover { background: rgba(41, 227, 214, 0.22); box-shadow: 0 0 12px var(--accent-glow); }
+
+    /* --- Modal detail per laporan --- */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(3, 6, 12, 0.72);
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; animation: rise 220ms ease; }
+    .modal {
+      width: min(680px, 100%);
+      max-height: 86vh;
+      overflow: auto;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px 26px;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+    }
+    .modal-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 6px;
+    }
+    .modal-head h3 {
+      font-family: "Space Grotesk", sans-serif;
+      margin: 0;
+      font-size: 1.15rem;
+    }
+    .modal-head .rid {
+      display: block;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 4px;
+      word-break: break-word;
+    }
+    .modal-close {
+      flex: none;
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      border: 1px solid var(--border-soft);
+      background: rgba(5, 9, 16, 0.7);
+      color: var(--muted);
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: color 150ms ease, border-color 150ms ease;
+    }
+    .modal-close:hover { color: var(--danger); border-color: var(--danger); }
+
+    .modal-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0 4px;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+    }
+    .modal-summary .pill {
+      padding: 3px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border-soft);
+      color: var(--muted);
+    }
+    .modal-summary .pill b { color: var(--ink); }
+    .modal-summary .pill.tp b { color: var(--ok); }
+    .modal-summary .pill.fp b { color: var(--danger); }
+
+    .modal-section { margin-top: 18px; }
+    .modal-section h4 {
+      font-family: "Space Grotesk", sans-serif;
+      font-size: 0.9rem;
+      margin: 0 0 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+    }
+    .modal-section h4 .count {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+    }
+    .item-list { display: flex; flex-direction: column; gap: 7px; }
+    .item {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 9px;
+      border: 1px solid var(--border-soft);
+      background: rgba(11, 17, 28, 0.6);
+    }
+    .item .iid {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--accent);
+      flex: none;
+      min-width: 78px;
+    }
+    .item .iname { font-size: 0.85rem; color: var(--ink); }
+    .item .badge {
+      margin-left: auto;
+      flex: none;
+      font-family: var(--mono);
+      font-size: 0.64rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 999px;
+    }
+    .item.tp { border-color: rgba(56, 224, 139, 0.34); }
+    .item.tp .badge { background: rgba(56, 224, 139, 0.14); color: var(--ok); }
+    .item.tp .iid { color: var(--ok); }
+    .item.fp { border-color: rgba(255, 93, 108, 0.32); }
+    .item.fp .badge { background: rgba(255, 93, 108, 0.14); color: var(--danger); }
+    .item.fp .iid { color: var(--danger); }
+    .item.miss { border-style: dashed; opacity: 0.85; }
+    .item.miss .badge { background: rgba(120, 150, 180, 0.14); color: var(--muted); }
+    .modal-empty { color: var(--muted); font-size: 0.82rem; font-family: var(--mono); }
+
+    /* --- Agent pipeline (live) --- */
+    .agent-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+      align-items: stretch;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .agent-arrow { display: flex; align-items: center; color: var(--muted); font-family: var(--mono); }
+    .agent-card {
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: rgba(11, 17, 28, 0.7);
+      transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
+    }
+    .agent-head { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+    .agent-head b { font-family: "Space Grotesk", sans-serif; }
+    .agent-led {
+      width: 9px; height: 9px; border-radius: 50%;
+      background: var(--muted); flex: none;
+    }
+    .agent-state {
+      margin-left: auto;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .agent-detail {
+      margin-top: 8px;
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      line-height: 1.45;
+      color: var(--muted);
+      min-height: 2.2em;
+      word-break: break-word;
+    }
+
+    .agent-card.running {
+      border-color: var(--accent);
+      background: rgba(41, 227, 214, 0.08);
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .agent-card.running .agent-led { background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); animation: pulse 1.1s ease-in-out infinite; }
+    .agent-card.running .agent-state { color: var(--accent); }
+    .agent-card.running .agent-detail { color: var(--ink); }
+
+    .agent-card.done { border-color: rgba(56, 224, 139, 0.4); }
+    .agent-card.done .agent-led { background: var(--ok); box-shadow: 0 0 8px rgba(56, 224, 139, 0.5); }
+    .agent-card.done .agent-state { color: var(--ok); }
+    .agent-card.done .agent-detail { color: var(--ink); }
+
+    .agent-card.error { border-color: rgba(255, 93, 108, 0.5); }
+    .agent-card.error .agent-led { background: var(--danger); box-shadow: 0 0 8px rgba(255, 93, 108, 0.5); }
+    .agent-card.error .agent-state { color: var(--danger); }
+
+    .agent-card.skipped { opacity: 0.62; }
+    .agent-card.skipped .agent-state { color: var(--muted); }
+
+    .agent-log {
+      margin-top: 16px;
+      max-height: 220px;
+      overflow: auto;
+      border: 1px solid var(--border-soft);
+      border-radius: 12px;
+      background: rgba(5, 9, 16, 0.7);
+      padding: 10px 12px;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      line-height: 1.7;
+    }
+    .agent-log .log-empty { color: var(--muted); }
+    .agent-log .row { display: flex; gap: 10px; }
+    .agent-log .t { color: var(--muted); flex: none; }
+    .agent-log .a { color: var(--accent-2); flex: none; min-width: 92px; }
+    .agent-log .d { color: var(--ink); }
+    .agent-log .row.done .a { color: var(--ok); }
+    .agent-log .row.error .a { color: var(--danger); }
+
+    @media (max-width: 900px) {
+      .agent-grid { grid-template-columns: 1fr; }
+      .agent-arrow { display: none; }
+    }
+
     @keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
 
@@ -319,6 +547,37 @@
     </section>
 
     <section class="card">
+      <h2>Agent Pipeline &mdash; Live</h2>
+      <p style="margin:0 0 4px; color:var(--muted); font-size:0.86rem;">
+        Alur per laporan: <b>Tactic Agent</b> &rarr; <b>Technique Agent</b> &rarr; <b>Reviewer Agent</b> (bisa balik minta revisi) &rarr; <b>Reconciler</b>.
+      </p>
+
+      <div class="agent-grid" id="agentGrid">
+        <div class="agent-card" data-agent="tactic">
+          <div class="agent-head"><span class="agent-led"></span><b>Tactic Agent</b><span class="agent-state">idle</span></div>
+          <div class="agent-detail">Menunggu run...</div>
+        </div>
+        <div class="agent-arrow">&rarr;</div>
+        <div class="agent-card" data-agent="technique">
+          <div class="agent-head"><span class="agent-led"></span><b>Technique Agent</b><span class="agent-state">idle</span></div>
+          <div class="agent-detail">Menunggu run...</div>
+        </div>
+        <div class="agent-arrow">&rarr;</div>
+        <div class="agent-card" data-agent="reviewer">
+          <div class="agent-head"><span class="agent-led"></span><b>Reviewer Agent</b><span class="agent-state">idle</span></div>
+          <div class="agent-detail">Menunggu run...</div>
+        </div>
+        <div class="agent-arrow">&rarr;</div>
+        <div class="agent-card" data-agent="reconciler">
+          <div class="agent-head"><span class="agent-led"></span><b>Reconciler</b><span class="agent-state">idle</span></div>
+          <div class="agent-detail">Menunggu run...</div>
+        </div>
+      </div>
+
+      <div class="agent-log" id="agentLog"><div class="log-empty">Belum ada aktivitas agent.</div></div>
+    </section>
+
+    <section class="card">
       <h2>Metrik Live</h2>
       <div class="chips" style="margin-top:4px;">
         <div class="chip">
@@ -356,15 +615,49 @@
       <div class="batch-table-wrap">
         <table class="batch-table">
           <thead>
-            <tr><th>#</th><th>Laporan</th><th>Pred</th><th>GT</th><th>TP</th><th>FP</th><th>FN</th></tr>
+            <tr><th>#</th><th>Laporan</th><th>Pred</th><th>GT</th><th>TP</th><th>FP</th><th>FN</th><th>Detail</th></tr>
           </thead>
           <tbody id="batchTableBody">
-            <tr><td colspan="7" style="color:var(--muted);">Belum ada hasil.</td></tr>
+            <tr><td colspan="8" style="color:var(--muted);">Belum ada hasil.</td></tr>
           </tbody>
         </table>
       </div>
       <div id="batchOutputInfo" class="footer"></div>
     </section>
+  </div>
+
+  <div class="modal-overlay" id="detailModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <h3 id="modalTitle">Detail Laporan</h3>
+          <span class="rid" id="modalReportId"></span>
+        </div>
+        <button class="modal-close" id="modalCloseBtn" aria-label="Tutup">&times;</button>
+      </div>
+
+      <div class="modal-summary" id="modalSummary"></div>
+
+      <div class="modal-section">
+        <h4>Taktik Teridentifikasi <span class="count" id="modalTacticCount"></span></h4>
+        <div class="item-list" id="modalTactics"></div>
+      </div>
+
+      <div class="modal-section" id="modalMissedTacticSection">
+        <h4>Taktik Terlewat (FN) <span class="count" id="modalMissedTacticCount"></span></h4>
+        <div class="item-list" id="modalMissedTactics"></div>
+      </div>
+
+      <div class="modal-section">
+        <h4>Teknik Teridentifikasi <span class="count" id="modalTechCount"></span></h4>
+        <div class="item-list" id="modalTechniques"></div>
+      </div>
+
+      <div class="modal-section" id="modalMissedSection">
+        <h4>Teknik Terlewat (FN) <span class="count" id="modalMissedCount"></span></h4>
+        <div class="item-list" id="modalMissed"></div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -379,8 +672,64 @@
     const batchTotalAvail = document.getElementById("batchTotalAvail");
     const batchOutputInfo = document.getElementById("batchOutputInfo");
 
-    const BATCH_POLL_MS = 3000;
+    const agentGrid = document.getElementById("agentGrid");
+    const agentLog = document.getElementById("agentLog");
+
+    const detailModal = document.getElementById("detailModal");
+    const modalCloseBtn = document.getElementById("modalCloseBtn");
+
+    // Rows terakhir dari server, diindeks by row.index supaya tombol "View"
+    // bisa menampilkan detail tanpa fetch ulang.
+    let rowsByIndex = {};
+
+    // Poll cukup rapat supaya perpindahan antar-agent terlihat (satu agent bisa
+    // selesai dalam beberapa detik).
+    const BATCH_POLL_MS = 1200;
     let batchPolling = false;
+
+    const AGENT_STATE_LABEL = {
+      idle: "idle",
+      running: "bekerja",
+      done: "selesai",
+      skipped: "nonaktif",
+      error: "error",
+    };
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => (
+        { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+      ));
+    }
+
+    function renderAgents(st) {
+      const agents = st.agents || {};
+      agentGrid.querySelectorAll(".agent-card").forEach(card => {
+        const a = agents[card.dataset.agent] || { status: "idle", detail: "" };
+        card.classList.remove("running", "done", "error", "skipped");
+        if (a.status !== "idle") card.classList.add(a.status);
+
+        const state = card.querySelector(".agent-state");
+        const iterTag = (card.dataset.agent === "reviewer" && a.iteration > 1) ? ` #${a.iteration}` : "";
+        state.textContent = (AGENT_STATE_LABEL[a.status] || a.status) + iterTag;
+        card.querySelector(".agent-detail").textContent =
+          a.detail || (st.status === "running" ? "Menunggu giliran..." : "Menunggu run...");
+      });
+
+      const log = (st.agent_log || []).slice().reverse();
+      if (log.length === 0) {
+        agentLog.innerHTML = '<div class="log-empty">Belum ada aktivitas agent.</div>';
+        return;
+      }
+      agentLog.innerHTML = log.map(e => {
+        const ts = new Date(e.ts * 1000).toLocaleTimeString();
+        const verb = AGENT_STATE_LABEL[e.status] || e.status;
+        return `<div class="row ${escapeHtml(e.status)}">
+          <span class="t">${ts}</span>
+          <span class="a">[${escapeHtml(e.agent)}]</span>
+          <span class="d">#${e.report_index} ${verb} &mdash; ${escapeHtml(e.detail)}</span>
+        </div>`;
+      }).join("");
+    }
 
     function fmtDur(seconds) {
       const s = Math.max(0, Math.floor(seconds));
@@ -429,28 +778,114 @@
       }
       batchStatusLine.textContent = line;
 
+      renderAgents(st);
+
       setMetric("mEx", st.metrics, ["precision", "recall", "micro_f1", "accuracy"]);
       setMetric("mBa", st.metrics, ["base_precision", "base_recall", "base_micro_f1", "base_accuracy"]);
       setMetric("mTa", st.tactic_metrics, ["tactic_precision", "tactic_recall", "tactic_micro_f1", "tactic_accuracy"]);
 
       const rows = (st.rows || []).slice().reverse();
+      rowsByIndex = {};
+      (st.rows || []).forEach(r => { rowsByIndex[r.index] = r; });
       if (rows.length === 0) {
-        batchTableBody.innerHTML = '<tr><td colspan="7" style="color:var(--muted);">Belum ada hasil.</td></tr>';
+        batchTableBody.innerHTML = '<tr><td colspan="8" style="color:var(--muted);">Belum ada hasil.</td></tr>';
       } else {
         batchTableBody.innerHTML = rows.map(r => `
           <tr>
             <td class="num">${r.index}</td>
-            <td>${r.report_id}</td>
+            <td>${escapeHtml(r.report_id)}</td>
             <td class="num">${r.pred}</td>
             <td class="num">${r.gt}</td>
             <td class="num"><span class="ok">${r.tp}</span></td>
             <td class="num"><span class="bad">${r.fp}</span></td>
             <td class="num">${r.fn}</td>
+            <td><button type="button" class="view-btn" data-idx="${r.index}">&#128065; View</button></td>
           </tr>`).join("");
       }
 
       batchOutputInfo.textContent = st.output_path ? `Hasil tersimpan (incremental): ${st.output_path}` : "";
     }
+
+    function renderItemList(container, items, kind) {
+      // kind: "tactic" | "tp"/"fp" (teknik) | "miss"
+      if (!items || items.length === 0) {
+        container.innerHTML = '<div class="modal-empty">Tidak ada.</div>';
+        return;
+      }
+      container.innerHTML = items.map(it => {
+        let cls = "item";
+        let badge = "";
+        if (kind === "technique" || (kind === "tactic" && it.hit !== undefined)) {
+          // Taktik ikut dinilai terhadap GT taktik (diturunkan dari GT teknik).
+          // Run lama tanpa field itu tidak punya it.hit -> tampil tanpa badge.
+          cls += it.hit ? " tp" : " fp";
+          badge = `<span class="badge">${it.hit ? "TP" : "FP"}</span>`;
+        } else if (kind === "miss") {
+          cls += " miss";
+          badge = '<span class="badge">FN</span>';
+        }
+        const name = it.name ? escapeHtml(it.name) : '<span style="color:var(--muted)">(nama tidak diketahui)</span>';
+        return `<div class="${cls}">
+          <span class="iid">${escapeHtml(it.id)}</span>
+          <span class="iname">${name}</span>
+          ${badge}
+        </div>`;
+      }).join("");
+    }
+
+    function openDetailModal(idx) {
+      const r = rowsByIndex[idx];
+      if (!r) return;
+
+      document.getElementById("modalTitle").textContent = `Laporan #${r.index}`;
+      document.getElementById("modalReportId").textContent = r.report_id || "";
+
+      document.getElementById("modalSummary").innerHTML = `
+        <span class="pill">Prediksi <b>${r.pred}</b></span>
+        <span class="pill">Ground truth <b>${r.gt}</b></span>
+        <span class="pill tp">Benar <b>${r.tp}</b></span>
+        <span class="pill fp">Salah <b>${r.fp}</b></span>
+        <span class="pill">Terlewat <b>${r.fn}</b></span>`;
+
+      const tactics = r.tactics || [];
+      const missedTactics = r.missed_tactics || [];
+      const techniques = r.techniques || [];
+      const missed = r.missed || [];
+
+      document.getElementById("modalTacticCount").textContent = `(${tactics.length})`;
+      document.getElementById("modalMissedTacticCount").textContent = `(${missedTactics.length})`;
+      document.getElementById("modalTechCount").textContent = `(${techniques.length})`;
+      document.getElementById("modalMissedCount").textContent = `(${missed.length})`;
+
+      renderItemList(document.getElementById("modalTactics"), tactics, "tactic");
+      renderItemList(document.getElementById("modalMissedTactics"), missedTactics, "miss");
+      renderItemList(document.getElementById("modalTechniques"), techniques, "technique");
+      renderItemList(document.getElementById("modalMissed"), missed, "miss");
+
+      // Sembunyikan bagian FN jika ground truth kosong (tak relevan).
+      // GT taktik diturunkan dari GT teknik, jadi keduanya ikut r.gt.
+      const gtSections = r.gt > 0 ? "" : "none";
+      document.getElementById("modalMissedSection").style.display = gtSections;
+      document.getElementById("modalMissedTacticSection").style.display = gtSections;
+
+      detailModal.classList.add("open");
+    }
+
+    function closeDetailModal() {
+      detailModal.classList.remove("open");
+    }
+
+    batchTableBody.addEventListener("click", (e) => {
+      const btn = e.target.closest(".view-btn");
+      if (btn) openDetailModal(parseInt(btn.dataset.idx, 10));
+    });
+    modalCloseBtn.addEventListener("click", closeDetailModal);
+    detailModal.addEventListener("click", (e) => {
+      if (e.target === detailModal) closeDetailModal();
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && detailModal.classList.contains("open")) closeDetailModal();
+    });
 
     async function pollBatch() {
       if (batchPolling) return;

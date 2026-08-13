@@ -5,6 +5,8 @@ import time
 from dotenv import load_dotenv
 from openai import OpenAI
 
+from agents.prompt_budget import check_budget, record_prompt
+
 load_dotenv()
 
 
@@ -66,7 +68,7 @@ def _is_transient_error(error_text: str) -> bool:
 
 def create_reviewer_agent():
     """Inisialisasi reviewer LM Studio local server (OpenAI-compatible)."""
-    base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://100.100.211.39:1234").rstrip("/")
+    base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://localhost:1234").rstrip("/")
     model_name = os.getenv("LOCAL_LLM_REVIEWER_MODEL", "qwen/qwen3-4b")
     api_key = os.getenv("LOCAL_LLM_API_KEY", "")
     fallback_model = os.getenv("LOCAL_LLM_REVIEWER_FALLBACK_MODEL", "").strip()
@@ -249,6 +251,13 @@ Output only the JSON object.
     system_prompt = "You are a strict MITRE ATT&CK reviewer. Output only a JSON object, nothing else."
     if DISABLE_THINKING:
         system_prompt += " /no_think"
+
+    # Catat konsumsi context window (CATAT-SAJA). Daftar teknik di prompt ini
+    # adalah OBJEK yang dinilai, bukan kandidat pilihan — memangkasnya berarti
+    # reviewer menilai sebagian jawaban saja, sehingga sengaja tidak dilakukan
+    # meski PROMPT_BUDGET_ENFORCE=true. Ukurannya dikendalikan lewat
+    # LOCAL_LLM_REPORT_MAX_CHARS dan jumlah teknik yang diusulkan agen.
+    record_prompt("reviewer", check_budget(system_prompt, prompt, LOCAL_LLM_MAX_TOKENS_REVIEWER))
 
     attempt_models = [model["model"]]
     fallback_model = model.get("fallback_model")

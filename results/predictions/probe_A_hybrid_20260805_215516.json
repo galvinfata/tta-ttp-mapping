@@ -1,0 +1,2229 @@
+[
+  {
+    "report_id": "3CXDesktopApp Backdoored in a Suspected Lazarus Campaign  ",
+    "predicted_techniques": [
+      "T1195.002",
+      "T1574.001",
+      "T1185",
+      "T1217",
+      "T1102.003",
+      "T1132.001",
+      "T1102.001",
+      "T1071",
+      "T1005",
+      "T1555",
+      "T1539",
+      "T1140",
+      "T1027",
+      "T1574.002",
+      "T1553.002",
+      "T1497.003"
+    ],
+    "ground_truth": [
+      "T1083",
+      "T1140",
+      "T1027",
+      "T1027.009",
+      "T1574.002",
+      "T1573.001",
+      "T1106",
+      "T1082",
+      "T1005"
+    ],
+    "tactics_identified": [
+      "TA0042",
+      "TA0001",
+      "TA0002",
+      "TA0005",
+      "TA0007",
+      "TA0011",
+      "TA0006",
+      "TA0010"
+    ],
+    "stix_bundle": {
+      "type": "bundle",
+      "id": "bundle--580c0c0b-8413-4a30-8820-0e48ffdf695f",
+      "objects": [
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--8dbbc737-787f-4f3c-9b46-ed536bf054ab",
+          "created": "2026-08-05T14:58:11.458833Z",
+          "modified": "2026-08-05T14:58:11.458833Z",
+          "name": "Compromise Software Supply Chain",
+          "description": "Adversaries may manipulate application software prior to receipt by a final consumer for the purpose of data or system compromise. Supply chain compromise of software can take place in a number of way",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1195.002/",
+              "external_id": "T1195.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--c4fd5508-870f-4f60-a47b-36d42737fdfd",
+          "created": "2026-08-05T14:58:11.459506Z",
+          "modified": "2026-08-05T14:58:11.459506Z",
+          "name": "DLL Search Order Hijacking",
+          "description": "Adversaries may execute their own malicious payloads by hijacking the search order used to load DLLs. Windows systems use a common method to look for required DLLs to load into a program. (Citation: M",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1574.001/",
+              "external_id": "T1574.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--c153b06a-3b3d-4a84-b039-2a6eb109311f",
+          "created": "2026-08-05T14:58:11.460172Z",
+          "modified": "2026-08-05T14:58:11.460172Z",
+          "name": "Browser Session Hijacking",
+          "description": "Adversaries may take advantage of security vulnerabilities and inherent functionality in browser software to change content, modify user-behaviors, and intercept information as part of various browser",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "collection"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1185/",
+              "external_id": "T1185"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--4778bbd7-3b0e-4d13-8cd3-87eb780976c1",
+          "created": "2026-08-05T14:58:11.460683Z",
+          "modified": "2026-08-05T14:58:11.460683Z",
+          "name": "Browser Information Discovery",
+          "description": "Adversaries may enumerate information about browsers to learn more about compromised environments. Data saved by browsers (such as bookmarks, accounts, and browsing history) may reveal a variety of pe",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "discovery"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1217/",
+              "external_id": "T1217"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--3afd064e-e8e9-4dd4-8a7a-b68f7f06cafc",
+          "created": "2026-08-05T14:58:11.461002Z",
+          "modified": "2026-08-05T14:58:11.461002Z",
+          "name": "One-Way Communication",
+          "description": "Adversaries may use an existing, legitimate external Web service as a means for sending commands to a compromised system without receiving return output over the Web service channel. Compromised syste",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "command-and-control"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1102.003/",
+              "external_id": "T1102.003"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--f4f4a480-cf19-49eb-b70b-93f9dab4bfb2",
+          "created": "2026-08-05T14:58:11.461318Z",
+          "modified": "2026-08-05T14:58:11.461318Z",
+          "name": "Standard Encoding",
+          "description": "Adversaries may encode data with a standard data encoding system to make the content of command and control traffic more difficult to detect. Command and control (C2) information can be encoded using ",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "command-and-control"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1132.001/",
+              "external_id": "T1132.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--2cafb62d-21c2-46db-9b8d-432eca8437cc",
+          "created": "2026-08-05T14:58:11.461615Z",
+          "modified": "2026-08-05T14:58:11.461615Z",
+          "name": "Dead Drop Resolver",
+          "description": "Adversaries may use an existing, legitimate external Web service to host information that points to additional command and control (C2) infrastructure. Adversaries may post content, known as a dead dr",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "command-and-control"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1102.001/",
+              "external_id": "T1102.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--3a30b9c6-f45a-41ec-a008-0ca1f7a54e5a",
+          "created": "2026-08-05T14:58:11.46192Z",
+          "modified": "2026-08-05T14:58:11.46192Z",
+          "name": "Application Layer Protocol",
+          "description": "Adversaries may communicate using OSI application layer protocols to avoid detection/network filtering by blending in with existing traffic. Commands to the remote system, and often the results of tho",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "command-and-control"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1071/",
+              "external_id": "T1071"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--4951a783-2f80-4c5e-bcc9-0f96c1482b5a",
+          "created": "2026-08-05T14:58:11.462261Z",
+          "modified": "2026-08-05T14:58:11.462261Z",
+          "name": "Data from Local System",
+          "description": "Adversaries may search local system sources, such as file systems and configuration files or local databases, to find files of interest and sensitive data prior to Exfiltration.\n\nAdversaries may do th",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "collection"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1005/",
+              "external_id": "T1005"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--94675271-b9fe-4ada-931e-9509b5aa2c44",
+          "created": "2026-08-05T14:58:11.462585Z",
+          "modified": "2026-08-05T14:58:11.462585Z",
+          "name": "Credentials from Password Stores",
+          "description": "Adversaries may search for common password storage locations to obtain user credentials. Passwords are stored in several places on a system, depending on the operating system or application holding th",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "credential-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1555/",
+              "external_id": "T1555"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--72306331-7fc6-41d7-a7c5-818b5eaef766",
+          "created": "2026-08-05T14:58:11.462889Z",
+          "modified": "2026-08-05T14:58:11.462889Z",
+          "name": "Steal Web Session Cookie",
+          "description": "An adversary may steal web application or service session cookies and use them to gain access to web applications or Internet services as an authenticated user without needing credentials. Web applica",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "credential-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1539/",
+              "external_id": "T1539"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--9e57286f-caff-4a0c-ae58-e72644074d7f",
+          "created": "2026-08-05T14:58:11.46318Z",
+          "modified": "2026-08-05T14:58:11.46318Z",
+          "name": "Deobfuscate/Decode Files or Information",
+          "description": "Adversaries may use [Obfuscated Files or Information](https://attack.mitre.org/techniques/T1027) to hide artifacts of an intrusion from analysis. They may require separate mechanisms to decode or deob",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1140/",
+              "external_id": "T1140"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--b3f751ca-3522-4c46-b287-36559ad04763",
+          "created": "2026-08-05T14:58:11.463471Z",
+          "modified": "2026-08-05T14:58:11.463471Z",
+          "name": "Obfuscated Files or Information",
+          "description": "Adversaries may attempt to make an executable or file difficult to discover or analyze by encrypting, encoding, or otherwise obfuscating its contents on the system or in transit. This is common behavi",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1027/",
+              "external_id": "T1027"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--f5f62759-1c1c-4650-809d-e046cee7f5b6",
+          "created": "2026-08-05T14:58:11.463749Z",
+          "modified": "2026-08-05T14:58:11.463749Z",
+          "name": "DLL Side-Loading",
+          "description": "Adversaries may execute their own malicious payloads by side-loading DLLs. Similar to [DLL Search Order Hijacking](https://attack.mitre.org/techniques/T1574/001), side-loading involves hijacking which",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1574.002/",
+              "external_id": "T1574.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--019f09ad-599b-4a45-971c-3e7ac083e580",
+          "created": "2026-08-05T14:58:11.46413Z",
+          "modified": "2026-08-05T14:58:11.46413Z",
+          "name": "Code Signing",
+          "description": "Adversaries may create, acquire, or steal code signing materials to sign their malware or tools. Code signing provides a level of authenticity on a binary from the developer and a guarantee that the b",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1553.002/",
+              "external_id": "T1553.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--ff35327d-7daa-48c0-b35b-1e25788ae35d",
+          "created": "2026-08-05T14:58:11.464435Z",
+          "modified": "2026-08-05T14:58:11.464435Z",
+          "name": "Time Based Evasion",
+          "description": "Adversaries may employ various time-based methods to detect and avoid virtualization and analysis environments. This may include enumerating time-based properties, such as uptime or the system clock, ",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "discovery"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1497.003/",
+              "external_id": "T1497.003"
+            }
+          ]
+        }
+      ]
+    },
+    "reviewer_error_count": 0,
+    "reviewer_errored": false,
+    "reviewer_invoked": false,
+    "review_iterations": 1,
+    "report_chars": 14540,
+    "coverage_chars": 14540,
+    "coverage_ratio": 1.0,
+    "chunks_processed": 2,
+    "candidates_shown": [
+      "T1005",
+      "T1010",
+      "T1012",
+      "T1027",
+      "T1027.003",
+      "T1027.004",
+      "T1027.005",
+      "T1027.007",
+      "T1027.008",
+      "T1027.009",
+      "T1033",
+      "T1036.008",
+      "T1059.001",
+      "T1070",
+      "T1071",
+      "T1074",
+      "T1074.001",
+      "T1082",
+      "T1102",
+      "T1102.001",
+      "T1102.002",
+      "T1102.003",
+      "T1104",
+      "T1106",
+      "T1114.001",
+      "T1119",
+      "T1125",
+      "T1127",
+      "T1132",
+      "T1132.001",
+      "T1132.002",
+      "T1140",
+      "T1176",
+      "T1185",
+      "T1189",
+      "T1190",
+      "T1195",
+      "T1195.002",
+      "T1195.003",
+      "T1203",
+      "T1204",
+      "T1204.001",
+      "T1204.002",
+      "T1204.003",
+      "T1210",
+      "T1211",
+      "T1213",
+      "T1216",
+      "T1217",
+      "T1218",
+      "T1220",
+      "T1480",
+      "T1486",
+      "T1496",
+      "T1497",
+      "T1497.001",
+      "T1497.002",
+      "T1497.003",
+      "T1518",
+      "T1518.001",
+      "T1525",
+      "T1538",
+      "T1539",
+      "T1547.010",
+      "T1550.004",
+      "T1553",
+      "T1553.002",
+      "T1553.004",
+      "T1554",
+      "T1555",
+      "T1555.003",
+      "T1555.004",
+      "T1562.010",
+      "T1564.007",
+      "T1567.001",
+      "T1574",
+      "T1574.001",
+      "T1574.002",
+      "T1578.002",
+      "T1606",
+      "T1622"
+    ],
+    "candidates_dropped_budget": 0,
+    "prompt_overflow_calls": 0,
+    "rank_of_selected": {
+      "T1195.002": 4,
+      "T1574.001": 15,
+      "T1027.004": 31,
+      "T1185": 11,
+      "T1217": 2,
+      "T1555.004": 39,
+      "T1102.003": 14,
+      "T1132.001": 16,
+      "T1102.001": 6,
+      "T1071": 14,
+      "T1005": 17,
+      "T1555": 20,
+      "T1539": 12,
+      "T1140": 2,
+      "T1027": 1,
+      "T1574.002": 10,
+      "T1553.002": 15,
+      "T1497.003": 23
+    },
+    "rank_of_accepted": {
+      "T1195.002": 4,
+      "T1574.001": 15,
+      "T1185": 11,
+      "T1217": 2,
+      "T1102.003": 14,
+      "T1132.001": 16,
+      "T1102.001": 6,
+      "T1071": 14,
+      "T1005": 17,
+      "T1555": 20,
+      "T1539": 12,
+      "T1140": 2,
+      "T1027": 1,
+      "T1574.002": 10,
+      "T1553.002": 15,
+      "T1497.003": 23
+    },
+    "rank_of_filtered_out": {
+      "T1027.004": 31,
+      "T1555.004": 39
+    },
+    "candidate_shuffle_seed": null
+  },
+  {
+    "report_id": "A lookback under the TA410 umbrella Its cyberespionage TTPs and activity",
+    "predicted_techniques": [
+      "T1195.002",
+      "T1195.001",
+      "T1190",
+      "T1123",
+      "T1199",
+      "T1195",
+      "T1505.004",
+      "T1574.001",
+      "T1574.002",
+      "T1137.002",
+      "T1546.009",
+      "T1053.005",
+      "T1546.010",
+      "T1620",
+      "T1543.003",
+      "T1127.001",
+      "T1129",
+      "T1574",
+      "T1547.001",
+      "T1055.001",
+      "T1546",
+      "T1547.003",
+      "T1055.003",
+      "T1055",
+      "T1140"
+    ],
+    "ground_truth": [
+      "T1113",
+      "T1071.001",
+      "T1095",
+      "T1057",
+      "T1518.001",
+      "T1056.001",
+      "T1190",
+      "T1105",
+      "T1027",
+      "T1055.002",
+      "T1140",
+      "T1055",
+      "T1547.001",
+      "T1036.005",
+      "T1112",
+      "T1543.003",
+      "T1053.005",
+      "T1569.002",
+      "T1574.002",
+      "T1027.005",
+      "T1070.004",
+      "T1055.012",
+      "T1074.001",
+      "T1005",
+      "T1083",
+      "T1566.001",
+      "T1106",
+      "T1047",
+      "T1090.001",
+      "T1573.001",
+      "T1027.009",
+      "T1082",
+      "T1041",
+      "T1059.003",
+      "T1027.002",
+      "T1055.001",
+      "T1090",
+      "T1012"
+    ],
+    "tactics_identified": [
+      "TA0001",
+      "TA0002",
+      "TA0006",
+      "TA0007",
+      "TA0008",
+      "TA0011",
+      "TA0040"
+    ],
+    "stix_bundle": {
+      "type": "bundle",
+      "id": "bundle--04f6dc4e-16b6-409a-a7e9-3dd0ccb1511d",
+      "objects": [
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--6038d1c5-9c90-4320-88c4-d9554b4a9968",
+          "created": "2026-08-05T15:01:32.066742Z",
+          "modified": "2026-08-05T15:01:32.066742Z",
+          "name": "Compromise Software Supply Chain",
+          "description": "Adversaries may manipulate application software prior to receipt by a final consumer for the purpose of data or system compromise. Supply chain compromise of software can take place in a number of way",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1195.002/",
+              "external_id": "T1195.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--74d914a0-ece9-4bbc-880b-b386fcd8bc4d",
+          "created": "2026-08-05T15:01:32.067485Z",
+          "modified": "2026-08-05T15:01:32.067485Z",
+          "name": "Compromise Software Dependencies and Development Tools",
+          "description": "Adversaries may manipulate software dependencies and development tools prior to receipt by a final consumer for the purpose of data or system compromise. Applications often depend on external software",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1195.001/",
+              "external_id": "T1195.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--29c46951-acc6-4e3c-8abd-0e91d06055f7",
+          "created": "2026-08-05T15:01:32.068169Z",
+          "modified": "2026-08-05T15:01:32.068169Z",
+          "name": "Exploit Public-Facing Application",
+          "description": "Adversaries may attempt to exploit a weakness in an Internet-facing host or system to initially access a network. The weakness in the system can be a software bug, a temporary glitch, or a misconfigur",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1190/",
+              "external_id": "T1190"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--4620b721-f49a-4a59-8c8c-87bb09f3c2f9",
+          "created": "2026-08-05T15:01:32.068813Z",
+          "modified": "2026-08-05T15:01:32.068813Z",
+          "name": "Audio Capture",
+          "description": "An adversary can leverage a computer's peripheral devices (e.g., microphones and webcams) or applications (e.g., voice and video call services) to capture audio recordings for the purpose of listening",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "collection"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1123/",
+              "external_id": "T1123"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--ac2af847-3ed8-4963-b60e-7f6eb5bdbc7c",
+          "created": "2026-08-05T15:01:32.069464Z",
+          "modified": "2026-08-05T15:01:32.069464Z",
+          "name": "Trusted Relationship",
+          "description": "Adversaries may breach or otherwise leverage organizations who have access to intended victims. Access through trusted third party relationship abuses an existing connection that may not be protected ",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1199/",
+              "external_id": "T1199"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--fb1dd52a-cff3-4712-8c4a-0be99d9e1d12",
+          "created": "2026-08-05T15:01:32.070174Z",
+          "modified": "2026-08-05T15:01:32.070174Z",
+          "name": "Supply Chain Compromise",
+          "description": "Adversaries may manipulate products or product delivery mechanisms prior to receipt by a final consumer for the purpose of data or system compromise.\n\nSupply chain compromise can take place at any sta",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1195/",
+              "external_id": "T1195"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--5fc8c7ed-2a0c-44d3-b202-fe05b39b6bd7",
+          "created": "2026-08-05T15:01:32.070686Z",
+          "modified": "2026-08-05T15:01:32.070686Z",
+          "name": "IIS Components",
+          "description": "Adversaries may install malicious components that run on Internet Information Services (IIS) web servers to establish persistence. IIS provides several mechanisms to extend the functionality of the we",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1505.004/",
+              "external_id": "T1505.004"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--73ac06d1-0775-4249-8784-4f35ae623a37",
+          "created": "2026-08-05T15:01:32.071017Z",
+          "modified": "2026-08-05T15:01:32.071017Z",
+          "name": "DLL Search Order Hijacking",
+          "description": "Adversaries may execute their own malicious payloads by hijacking the search order used to load DLLs. Windows systems use a common method to look for required DLLs to load into a program. (Citation: M",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1574.001/",
+              "external_id": "T1574.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--4369f363-a95a-4e49-be4f-68062c8dc07a",
+          "created": "2026-08-05T15:01:32.071533Z",
+          "modified": "2026-08-05T15:01:32.071533Z",
+          "name": "DLL Side-Loading",
+          "description": "Adversaries may execute their own malicious payloads by side-loading DLLs. Similar to [DLL Search Order Hijacking](https://attack.mitre.org/techniques/T1574/001), side-loading involves hijacking which",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1574.002/",
+              "external_id": "T1574.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--bfdf1c74-1467-4eee-9264-28093e12e470",
+          "created": "2026-08-05T15:01:32.072181Z",
+          "modified": "2026-08-05T15:01:32.072181Z",
+          "name": "Office Test",
+          "description": "Adversaries may abuse the Microsoft Office \"Office Test\" Registry key to obtain persistence on a compromised system. An Office Test Registry location exists that allows a user to specify an arbitrary ",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1137.002/",
+              "external_id": "T1137.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--f5c42e09-7d64-422b-b576-665de9525c3e",
+          "created": "2026-08-05T15:01:32.07264Z",
+          "modified": "2026-08-05T15:01:32.07264Z",
+          "name": "AppCert DLLs",
+          "description": "Adversaries may establish persistence and/or elevate privileges by executing malicious content triggered by AppCert DLLs loaded into processes. Dynamic-link libraries (DLLs) that are specified in the ",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1546.009/",
+              "external_id": "T1546.009"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--afcab99b-2cda-4c4c-9db0-163b88b72331",
+          "created": "2026-08-05T15:01:32.073329Z",
+          "modified": "2026-08-05T15:01:32.073329Z",
+          "name": "Scheduled Task",
+          "description": "Adversaries may abuse the Windows Task Scheduler to perform task scheduling for initial or recurring execution of malicious code. There are multiple ways to access the Task Scheduler in Windows. The [",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "execution"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1053.005/",
+              "external_id": "T1053.005"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--8c57e3f5-238e-41df-a573-2dba92950b8d",
+          "created": "2026-08-05T15:01:32.073956Z",
+          "modified": "2026-08-05T15:01:32.073956Z",
+          "name": "AppInit DLLs",
+          "description": "Adversaries may establish persistence and/or elevate privileges by executing malicious content triggered by AppInit DLLs loaded into processes. Dynamic-link libraries (DLLs) that are specified in the ",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1546.010/",
+              "external_id": "T1546.010"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--3c8bd780-4fa1-4f3c-a3e6-bd1c69ba7fbe",
+          "created": "2026-08-05T15:01:32.074565Z",
+          "modified": "2026-08-05T15:01:32.074565Z",
+          "name": "Reflective Code Loading",
+          "description": "Adversaries may reflectively load code into a process in order to conceal the execution of malicious payloads. Reflective loading involves allocating then executing payloads directly within the memory",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1620/",
+              "external_id": "T1620"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--07f73de4-59c3-4ffb-b183-89a41ed8d503",
+          "created": "2026-08-05T15:01:32.075001Z",
+          "modified": "2026-08-05T15:01:32.075001Z",
+          "name": "Windows Service",
+          "description": "Adversaries may create or modify Windows services to repeatedly execute malicious payloads as part of persistence. When Windows boots up, it starts programs or applications called services that perfor",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1543.003/",
+              "external_id": "T1543.003"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--c5ef549c-d7c1-4f33-83eb-c04cc82f6bb1",
+          "created": "2026-08-05T15:01:32.075505Z",
+          "modified": "2026-08-05T15:01:32.075505Z",
+          "name": "MSBuild",
+          "description": "Adversaries may use MSBuild to proxy execution of code through a trusted Windows utility. MSBuild.exe (Microsoft Build Engine) is a software build platform used by Visual Studio. It handles XML format",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1127.001/",
+              "external_id": "T1127.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--ebb38164-67ee-4c9c-aa0e-d39d56b81e20",
+          "created": "2026-08-05T15:01:32.075982Z",
+          "modified": "2026-08-05T15:01:32.075982Z",
+          "name": "Shared Modules",
+          "description": "Adversaries may execute malicious payloads via loading shared modules. The Windows module loader can be instructed to load DLLs from arbitrary local paths and arbitrary Universal Naming Convention (UN",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "execution"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1129/",
+              "external_id": "T1129"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--928e1638-d805-49de-ad31-23a1b78b26d0",
+          "created": "2026-08-05T15:01:32.076492Z",
+          "modified": "2026-08-05T15:01:32.076492Z",
+          "name": "Hijack Execution Flow",
+          "description": "Adversaries may execute their own malicious payloads by hijacking the way operating systems run programs. Hijacking execution flow can be for the purposes of persistence, since this hijacked execution",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1574/",
+              "external_id": "T1574"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--e4413411-9f9c-46f4-8478-2f6c34ecda53",
+          "created": "2026-08-05T15:01:32.07712Z",
+          "modified": "2026-08-05T15:01:32.07712Z",
+          "name": "Registry Run Keys / Startup Folder",
+          "description": "Adversaries may achieve persistence by adding a program to a startup folder or referencing it with a Registry run key. Adding an entry to the \"run keys\" in the Registry or startup folder will cause th",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1547.001/",
+              "external_id": "T1547.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--a409410d-d2f9-479e-bbb1-eb58487c5e4e",
+          "created": "2026-08-05T15:01:32.077667Z",
+          "modified": "2026-08-05T15:01:32.077667Z",
+          "name": "Dynamic-link Library Injection",
+          "description": "Adversaries may inject dynamic-link libraries (DLLs) into processes in order to evade process-based defenses as well as possibly elevate privileges. DLL injection is a method of executing arbitrary co",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1055.001/",
+              "external_id": "T1055.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--802eb8f0-b431-4c63-a3e6-8fc728fd24b3",
+          "created": "2026-08-05T15:01:32.07844Z",
+          "modified": "2026-08-05T15:01:32.07844Z",
+          "name": "Event Triggered Execution",
+          "description": "Adversaries may establish persistence and/or elevate privileges using system mechanisms that trigger execution based on specific events. Various operating systems have means to monitor and subscribe t",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1546/",
+              "external_id": "T1546"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--2c5d7f1b-dbe6-4937-9e3a-83d57b03a2d6",
+          "created": "2026-08-05T15:01:32.07921Z",
+          "modified": "2026-08-05T15:01:32.07921Z",
+          "name": "Time Providers",
+          "description": "Adversaries may abuse time providers to execute DLLs when the system boots. The Windows Time service (W32Time) enables time synchronization across and within domains.(Citation: Microsoft W32Time Feb 2",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "persistence"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1547.003/",
+              "external_id": "T1547.003"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--5011f14e-0143-4b68-a1e3-3800fec6936b",
+          "created": "2026-08-05T15:01:32.080029Z",
+          "modified": "2026-08-05T15:01:32.080029Z",
+          "name": "Thread Execution Hijacking",
+          "description": "Adversaries may inject malicious code into hijacked processes in order to evade process-based defenses as well as possibly elevate privileges. Thread Execution Hijacking is a method of executing arbit",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1055.003/",
+              "external_id": "T1055.003"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--1b5085c1-d554-492c-b779-4713ea7447d5",
+          "created": "2026-08-05T15:01:32.080824Z",
+          "modified": "2026-08-05T15:01:32.080824Z",
+          "name": "Process Injection",
+          "description": "Adversaries may inject code into processes in order to evade process-based defenses as well as possibly elevate privileges. Process injection is a method of executing arbitrary code in the address spa",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1055/",
+              "external_id": "T1055"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--cc98af2e-d73c-4aad-9a0a-07a8cab0a97a",
+          "created": "2026-08-05T15:01:32.081583Z",
+          "modified": "2026-08-05T15:01:32.081583Z",
+          "name": "Deobfuscate/Decode Files or Information",
+          "description": "Adversaries may use [Obfuscated Files or Information](https://attack.mitre.org/techniques/T1027) to hide artifacts of an intrusion from analysis. They may require separate mechanisms to decode or deob",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1140/",
+              "external_id": "T1140"
+            }
+          ]
+        }
+      ]
+    },
+    "reviewer_error_count": 0,
+    "reviewer_errored": false,
+    "reviewer_invoked": false,
+    "review_iterations": 1,
+    "report_chars": 72887,
+    "coverage_chars": 23500,
+    "coverage_ratio": 0.3224,
+    "chunks_processed": 3,
+    "candidates_shown": [
+      "T1003.001",
+      "T1010",
+      "T1018",
+      "T1027",
+      "T1027.003",
+      "T1027.005",
+      "T1027.008",
+      "T1027.010",
+      "T1037.005",
+      "T1048",
+      "T1048.001",
+      "T1048.003",
+      "T1049",
+      "T1053",
+      "T1053.005",
+      "T1055",
+      "T1055.001",
+      "T1055.002",
+      "T1055.003",
+      "T1055.004",
+      "T1055.008",
+      "T1055.012",
+      "T1055.014",
+      "T1055.015",
+      "T1056.003",
+      "T1068",
+      "T1069",
+      "T1070",
+      "T1072",
+      "T1102.001",
+      "T1104",
+      "T1112",
+      "T1114.002",
+      "T1123",
+      "T1125",
+      "T1127.001",
+      "T1129",
+      "T1134",
+      "T1134.002",
+      "T1137.002",
+      "T1140",
+      "T1185",
+      "T1189",
+      "T1190",
+      "T1195",
+      "T1195.001",
+      "T1195.002",
+      "T1195.003",
+      "T1199",
+      "T1200",
+      "T1203",
+      "T1204",
+      "T1204.001",
+      "T1204.003",
+      "T1210",
+      "T1211",
+      "T1212",
+      "T1213.002",
+      "T1221",
+      "T1480",
+      "T1480.001",
+      "T1486",
+      "T1496",
+      "T1499.002",
+      "T1505",
+      "T1505.002",
+      "T1505.004",
+      "T1505.005",
+      "T1525",
+      "T1534",
+      "T1535",
+      "T1543",
+      "T1543.003",
+      "T1543.004",
+      "T1546",
+      "T1546.002",
+      "T1546.008",
+      "T1546.009",
+      "T1546.010",
+      "T1546.012",
+      "T1546.016",
+      "T1547",
+      "T1547.001",
+      "T1547.003",
+      "T1547.004",
+      "T1547.005",
+      "T1547.010",
+      "T1547.012",
+      "T1553.003",
+      "T1556.008",
+      "T1560.003",
+      "T1562.006",
+      "T1564.007",
+      "T1566",
+      "T1566.001",
+      "T1566.002",
+      "T1566.003",
+      "T1568",
+      "T1573",
+      "T1574",
+      "T1574.001",
+      "T1574.002",
+      "T1574.004",
+      "T1574.005",
+      "T1574.006",
+      "T1574.008",
+      "T1574.009",
+      "T1574.010",
+      "T1574.011",
+      "T1580",
+      "T1606.001",
+      "T1612",
+      "T1614",
+      "T1620",
+      "T1622"
+    ],
+    "candidates_dropped_budget": 0,
+    "prompt_overflow_calls": 0,
+    "rank_of_selected": {
+      "T1195.002": 9,
+      "T1195.001": 11,
+      "T1195.003": 6,
+      "T1190": 3,
+      "T1125": 48,
+      "T1134": 50,
+      "T1123": 23,
+      "T1199": 24,
+      "T1195": 15,
+      "T1505.004": 2,
+      "T1574.001": 3,
+      "T1574.002": 1,
+      "T1137.002": 10,
+      "T1546.008": 34,
+      "T1546.009": 9,
+      "T1546.002": 41,
+      "T1053.005": 2,
+      "T1546.010": 5,
+      "T1620": 6,
+      "T1543.003": 7,
+      "T1127.001": 8,
+      "T1129": 21,
+      "T1574.005": 22,
+      "T1547.001": 16,
+      "T1055.001": 19,
+      "T1546.012": 20,
+      "T1547.003": 23,
+      "T1055.003": 26,
+      "T1055.002": 27,
+      "T1140": 28,
+      "T1055.015": 37,
+      "T1037.005": 38,
+      "T1574.006": 39,
+      "T1574.010": 40,
+      "T1543.004": 48,
+      "T1547.012": 43,
+      "T1055.008": 47
+    },
+    "rank_of_accepted": {
+      "T1195.002": 9,
+      "T1195.001": 11,
+      "T1195.003": 6,
+      "T1190": 3,
+      "T1123": 23,
+      "T1199": 24,
+      "T1195": 15,
+      "T1505.004": 2,
+      "T1574.001": 3,
+      "T1574.002": 1,
+      "T1137.002": 10,
+      "T1546.009": 9,
+      "T1053.005": 2,
+      "T1546.010": 5,
+      "T1620": 6,
+      "T1543.003": 7,
+      "T1127.001": 8,
+      "T1129": 21,
+      "T1574.005": 22,
+      "T1547.001": 16,
+      "T1055.001": 19,
+      "T1546.012": 20,
+      "T1547.003": 23,
+      "T1055.003": 26,
+      "T1055.002": 27,
+      "T1140": 28
+    },
+    "rank_of_filtered_out": {
+      "T1125": 48,
+      "T1134": 50,
+      "T1546.008": 34,
+      "T1546.002": 41,
+      "T1055.015": 37,
+      "T1037.005": 38,
+      "T1574.006": 39,
+      "T1574.010": 40,
+      "T1543.004": 48,
+      "T1547.012": 43,
+      "T1055.008": 47
+    },
+    "candidate_shuffle_seed": null
+  },
+  {
+    "report_id": "AA20258A Chinese Ministry of State SecurityAffiliated Cyber Threat Actor Activity",
+    "predicted_techniques": [
+      "T1049",
+      "T1068",
+      "T1203",
+      "T1090.003",
+      "T1018",
+      "T1016",
+      "T1087",
+      "T1046",
+      "T1211",
+      "T1210",
+      "T1212",
+      "T1195.001",
+      "T1199",
+      "T1562",
+      "T1204.001",
+      "T1566.002",
+      "T1190",
+      "T1072",
+      "T1003.001",
+      "T1110.004",
+      "T1114",
+      "T1090.002",
+      "T1573.002"
+    ],
+    "ground_truth": [
+      "T1090.003",
+      "T1190",
+      "T1090.002",
+      "T1090",
+      "T1110",
+      "T1003.001",
+      "T1110.004",
+      "T1056.001",
+      "T1055",
+      "T1083",
+      "T1070.004",
+      "T1059.003",
+      "T1564.001"
+    ],
+    "tactics_identified": [
+      "TA0043",
+      "TA0042",
+      "TA0001",
+      "TA0002",
+      "TA0006",
+      "TA0011",
+      "TA0005",
+      "TA0007",
+      "TA0010"
+    ],
+    "stix_bundle": {
+      "type": "bundle",
+      "id": "bundle--08e99345-9cb4-4ba2-930c-3fb4caa413ef",
+      "objects": [
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--e6223135-8410-477d-91f6-ef3084e9927a",
+          "created": "2026-08-05T15:04:26.926111Z",
+          "modified": "2026-08-05T15:04:26.926111Z",
+          "name": "System Network Connections Discovery",
+          "description": "Adversaries may attempt to get a listing of network connections to or from the compromised system they are currently accessing or from remote systems by querying for information over the network. \n\nAn",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "discovery"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1049/",
+              "external_id": "T1049"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--3c8886a3-f5bc-448c-9230-54f37d6b0a7c",
+          "created": "2026-08-05T15:04:26.92677Z",
+          "modified": "2026-08-05T15:04:26.92677Z",
+          "name": "Exploitation for Privilege Escalation",
+          "description": "Adversaries may exploit software vulnerabilities in an attempt to elevate privileges. Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in a prog",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "privilege-escalation"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1068/",
+              "external_id": "T1068"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--68333ac7-af16-4069-90dd-5c5aad9ce16c",
+          "created": "2026-08-05T15:04:26.927136Z",
+          "modified": "2026-08-05T15:04:26.927136Z",
+          "name": "Exploitation for Client Execution",
+          "description": "Adversaries may exploit software vulnerabilities in client applications to execute code. Vulnerabilities can exist in software due to unsecure coding practices that can lead to unanticipated behavior.",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "execution"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1203/",
+              "external_id": "T1203"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--4022ff88-b2b7-4c10-a6dd-937ab0c4c388",
+          "created": "2026-08-05T15:04:26.927477Z",
+          "modified": "2026-08-05T15:04:26.927477Z",
+          "name": "Multi-hop Proxy",
+          "description": "To disguise the source of malicious traffic, adversaries may chain together multiple proxies. Typically, a defender will be able to identify the last proxy traffic traversed before it enters their net",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "command-and-control"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1090.003/",
+              "external_id": "T1090.003"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--1df3c0d3-5862-4d7e-b3ee-949b64477e16",
+          "created": "2026-08-05T15:04:26.927857Z",
+          "modified": "2026-08-05T15:04:26.927857Z",
+          "name": "Remote System Discovery",
+          "description": "Adversaries may attempt to get a listing of other systems by IP address, hostname, or other logical identifier on a network that may be used for Lateral Movement from the current system. Functionality",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "discovery"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1018/",
+              "external_id": "T1018"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--4572bc69-6541-439d-a8fb-061e84aa6172",
+          "created": "2026-08-05T15:04:26.928407Z",
+          "modified": "2026-08-05T15:04:26.928407Z",
+          "name": "System Network Configuration Discovery",
+          "description": "Adversaries may look for details about the network configuration and settings, such as IP and/or MAC addresses, of systems they access or through information discovery of remote systems. Several opera",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "discovery"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1016/",
+              "external_id": "T1016"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--56c52c39-e7c0-4284-834e-334dd63df2ea",
+          "created": "2026-08-05T15:04:26.928868Z",
+          "modified": "2026-08-05T15:04:26.928868Z",
+          "name": "Account Discovery",
+          "description": "Adversaries may attempt to get a listing of valid accounts, usernames, or email addresses on a system or within a compromised environment. This information can help adversaries determine which account",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "discovery"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1087/",
+              "external_id": "T1087"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--24ff2932-0b8a-4c44-9b3a-62083b62d46e",
+          "created": "2026-08-05T15:04:26.929215Z",
+          "modified": "2026-08-05T15:04:26.929215Z",
+          "name": "Network Service Discovery",
+          "description": "Adversaries may attempt to get a listing of services running on remote hosts and local network infrastructure devices, including those that may be vulnerable to remote software exploitation. Common me",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "discovery"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1046/",
+              "external_id": "T1046"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--71b840c5-4292-48c8-87cb-b4a10b91ec03",
+          "created": "2026-08-05T15:04:26.929558Z",
+          "modified": "2026-08-05T15:04:26.929558Z",
+          "name": "Exploitation for Defense Evasion",
+          "description": "Adversaries may exploit a system or application vulnerability to bypass security features. Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in a",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1211/",
+              "external_id": "T1211"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--c43c06db-517e-4907-a840-b9db4da0d8cc",
+          "created": "2026-08-05T15:04:26.930121Z",
+          "modified": "2026-08-05T15:04:26.930121Z",
+          "name": "Exploitation of Remote Services",
+          "description": "Adversaries may exploit remote services to gain unauthorized access to internal systems once inside of a network. Exploitation of a software vulnerability occurs when an adversary takes advantage of a",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "lateral-movement"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1210/",
+              "external_id": "T1210"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--8fb98de6-c5a5-46f1-ad1f-0278468564a4",
+          "created": "2026-08-05T15:04:26.930505Z",
+          "modified": "2026-08-05T15:04:26.930505Z",
+          "name": "Exploitation for Credential Access",
+          "description": "Adversaries may exploit software vulnerabilities in an attempt to collect credentials. Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in a pro",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "credential-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1212/",
+              "external_id": "T1212"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--73eed49e-8ab9-4d92-b90d-01742e5ba07e",
+          "created": "2026-08-05T15:04:26.930826Z",
+          "modified": "2026-08-05T15:04:26.930826Z",
+          "name": "Compromise Software Dependencies and Development Tools",
+          "description": "Adversaries may manipulate software dependencies and development tools prior to receipt by a final consumer for the purpose of data or system compromise. Applications often depend on external software",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1195.001/",
+              "external_id": "T1195.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--8bb9e3ca-336b-4573-b7e9-3e6bfa05ef70",
+          "created": "2026-08-05T15:04:26.931155Z",
+          "modified": "2026-08-05T15:04:26.931155Z",
+          "name": "Trusted Relationship",
+          "description": "Adversaries may breach or otherwise leverage organizations who have access to intended victims. Access through trusted third party relationship abuses an existing connection that may not be protected ",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1199/",
+              "external_id": "T1199"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--67f71dcf-ae09-4edd-b435-9a27c9a22fa0",
+          "created": "2026-08-05T15:04:26.931678Z",
+          "modified": "2026-08-05T15:04:26.931678Z",
+          "name": "Impair Defenses",
+          "description": "Adversaries may maliciously modify components of a victim environment in order to hinder or disable defensive mechanisms. This not only involves impairing preventative defenses, such as firewalls and ",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "defense-evasion"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1562/",
+              "external_id": "T1562"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--48238dde-550d-40bc-af7d-c376b932cb80",
+          "created": "2026-08-05T15:04:26.932138Z",
+          "modified": "2026-08-05T15:04:26.932138Z",
+          "name": "Malicious Link",
+          "description": "An adversary may rely upon a user clicking a malicious link in order to gain execution. Users may be subjected to social engineering to get them to click on a link that will lead to code execution. Th",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "execution"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1204.001/",
+              "external_id": "T1204.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--b159951f-74a0-4893-8494-fda142d9ad1a",
+          "created": "2026-08-05T15:04:26.932607Z",
+          "modified": "2026-08-05T15:04:26.932607Z",
+          "name": "Spearphishing Link",
+          "description": "Adversaries may send spearphishing emails with a malicious link in an attempt to gain access to victim systems. Spearphishing with a link is a specific variant of spearphishing. It is different from o",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1566.002/",
+              "external_id": "T1566.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--acac006b-55b1-4410-9977-ac31ba1df2a8",
+          "created": "2026-08-05T15:04:26.933316Z",
+          "modified": "2026-08-05T15:04:26.933316Z",
+          "name": "Exploit Public-Facing Application",
+          "description": "Adversaries may attempt to exploit a weakness in an Internet-facing host or system to initially access a network. The weakness in the system can be a software bug, a temporary glitch, or a misconfigur",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "initial-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1190/",
+              "external_id": "T1190"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--4b5acfa1-9177-48c7-97b7-5c2a371295c5",
+          "created": "2026-08-05T15:04:26.933787Z",
+          "modified": "2026-08-05T15:04:26.933787Z",
+          "name": "Software Deployment Tools",
+          "description": "Adversaries may gain access to and use third-party software suites installed within an enterprise network, such as administration, monitoring, and deployment systems, to move laterally through the net",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "execution"
+            },
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "lateral-movement"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1072/",
+              "external_id": "T1072"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--1ddf08b6-534f-493b-a2aa-c697f800804f",
+          "created": "2026-08-05T15:04:26.934331Z",
+          "modified": "2026-08-05T15:04:26.934331Z",
+          "name": "LSASS Memory",
+          "description": "Adversaries may attempt to access credential material stored in the process memory of the Local Security Authority Subsystem Service (LSASS). After a user logs on, the system generates and stores a va",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "credential-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1003.001/",
+              "external_id": "T1003.001"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--6d2958e2-0d4a-4abc-93b1-7d70b3c3f114",
+          "created": "2026-08-05T15:04:26.93483Z",
+          "modified": "2026-08-05T15:04:26.93483Z",
+          "name": "Credential Stuffing",
+          "description": "Adversaries may use credentials obtained from breach dumps of unrelated accounts to gain access to target accounts through credential overlap. Occasionally, large numbers of username and password pair",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "credential-access"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1110.004/",
+              "external_id": "T1110.004"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--3a5fcfb4-dc6a-401f-8d3a-011d93c3c444",
+          "created": "2026-08-05T15:04:26.935324Z",
+          "modified": "2026-08-05T15:04:26.935324Z",
+          "name": "Email Collection",
+          "description": "Adversaries may target user email to collect sensitive information. Emails may contain sensitive data, including trade secrets or personal information, that can prove valuable to adversaries. Adversar",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "collection"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1114/",
+              "external_id": "T1114"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--727f6060-0d62-42cb-a23a-beb8027ba314",
+          "created": "2026-08-05T15:04:26.935779Z",
+          "modified": "2026-08-05T15:04:26.935779Z",
+          "name": "External Proxy",
+          "description": "Adversaries may use an external proxy to act as an intermediary for network communications to a command and control server to avoid direct connections to their infrastructure. Many tools exist that en",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "command-and-control"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1090.002/",
+              "external_id": "T1090.002"
+            }
+          ]
+        },
+        {
+          "type": "attack-pattern",
+          "spec_version": "2.1",
+          "id": "attack-pattern--e34ae130-24d7-44d5-8bf4-a75b59aa86a4",
+          "created": "2026-08-05T15:04:26.93624Z",
+          "modified": "2026-08-05T15:04:26.93624Z",
+          "name": "Asymmetric Cryptography",
+          "description": "Adversaries may employ a known asymmetric encryption algorithm to conceal command and control traffic rather than relying on any inherent protections provided by a communication protocol. Asymmetric c",
+          "kill_chain_phases": [
+            {
+              "kill_chain_name": "mitre-attack",
+              "phase_name": "command-and-control"
+            }
+          ],
+          "external_references": [
+            {
+              "source_name": "mitre-attack",
+              "url": "https://attack.mitre.org/techniques/T1573.002/",
+              "external_id": "T1573.002"
+            }
+          ]
+        }
+      ]
+    },
+    "reviewer_error_count": 0,
+    "reviewer_errored": false,
+    "reviewer_invoked": false,
+    "review_iterations": 1,
+    "report_chars": 24191,
+    "coverage_chars": 23500,
+    "coverage_ratio": 0.9714,
+    "chunks_processed": 3,
+    "candidates_shown": [
+      "T1003",
+      "T1003.001",
+      "T1005",
+      "T1012",
+      "T1016",
+      "T1016.001",
+      "T1018",
+      "T1021",
+      "T1021.001",
+      "T1027",
+      "T1027.003",
+      "T1033",
+      "T1046",
+      "T1048",
+      "T1049",
+      "T1056.001",
+      "T1056.003",
+      "T1068",
+      "T1070",
+      "T1070.008",
+      "T1072",
+      "T1078",
+      "T1078.001",
+      "T1078.002",
+      "T1078.004",
+      "T1082",
+      "T1087",
+      "T1090",
+      "T1090.001",
+      "T1090.002",
+      "T1090.003",
+      "T1102",
+      "T1102.001",
+      "T1102.002",
+      "T1102.003",
+      "T1104",
+      "T1110",
+      "T1110.002",
+      "T1110.004",
+      "T1114",
+      "T1114.002",
+      "T1119",
+      "T1185",
+      "T1189",
+      "T1190",
+      "T1195",
+      "T1195.001",
+      "T1199",
+      "T1200",
+      "T1201",
+      "T1203",
+      "T1204",
+      "T1204.001",
+      "T1204.002",
+      "T1210",
+      "T1211",
+      "T1212",
+      "T1213",
+      "T1213.003",
+      "T1217",
+      "T1219",
+      "T1486",
+      "T1491.002",
+      "T1496",
+      "T1497.002",
+      "T1498",
+      "T1498.001",
+      "T1498.002",
+      "T1499",
+      "T1499.002",
+      "T1499.004",
+      "T1505.003",
+      "T1518",
+      "T1518.001",
+      "T1526",
+      "T1534",
+      "T1535",
+      "T1538",
+      "T1547.008",
+      "T1552.001",
+      "T1553",
+      "T1554",
+      "T1556.001",
+      "T1562",
+      "T1565",
+      "T1565.002",
+      "T1566",
+      "T1566.001",
+      "T1566.002",
+      "T1566.003",
+      "T1568",
+      "T1573",
+      "T1573.002",
+      "T1599",
+      "T1599.001",
+      "T1600.002",
+      "T1602.001",
+      "T1602.002",
+      "T1606",
+      "T1612",
+      "T1614.001"
+    ],
+    "candidates_dropped_budget": 0,
+    "prompt_overflow_calls": 0,
+    "rank_of_selected": {
+      "T1049": 18,
+      "T1068": 8,
+      "T1203": 5,
+      "T1090.003": 1,
+      "T1565.002": 46,
+      "T1565": 34,
+      "T1018": 12,
+      "T1016": 9,
+      "T1087": 22,
+      "T1046": 6,
+      "T1211": 3,
+      "T1210": 4,
+      "T1212": 27,
+      "T1195.001": 30,
+      "T1199": 25,
+      "T1535": 50,
+      "T1538": 44,
+      "T1189": 38,
+      "T1204.002": 45,
+      "T1027": 40,
+      "T1027.003": 39,
+      "T1078.001": 42,
+      "T1102.001": 43,
+      "T1562": 29,
+      "T1553": 48,
+      "T1219": 49,
+      "T1204.001": 2,
+      "T1566.002": 3,
+      "T1190": 1,
+      "T1072": 7,
+      "T1003.001": 13,
+      "T1110.004": 4,
+      "T1114": 8,
+      "T1090.002": 3,
+      "T1573.002": 5
+    },
+    "rank_of_accepted": {
+      "T1049": 18,
+      "T1068": 8,
+      "T1203": 5,
+      "T1090.003": 1,
+      "T1018": 12,
+      "T1016": 9,
+      "T1087": 22,
+      "T1046": 6,
+      "T1211": 3,
+      "T1210": 4,
+      "T1212": 27,
+      "T1195.001": 30,
+      "T1199": 25,
+      "T1562": 29,
+      "T1204.001": 2,
+      "T1566.002": 3,
+      "T1190": 1,
+      "T1072": 7,
+      "T1003.001": 13,
+      "T1110.004": 4,
+      "T1114": 8,
+      "T1090.002": 3,
+      "T1573.002": 5
+    },
+    "rank_of_filtered_out": {
+      "T1565.002": 46,
+      "T1565": 34,
+      "T1535": 50,
+      "T1538": 44,
+      "T1189": 38,
+      "T1204.002": 45,
+      "T1027": 40,
+      "T1027.003": 39,
+      "T1078.001": 42,
+      "T1102.001": 43,
+      "T1553": 48,
+      "T1219": 49
+    },
+    "candidate_shuffle_seed": null
+  }
+]

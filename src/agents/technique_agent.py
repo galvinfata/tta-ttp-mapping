@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import re
 import time
 from dotenv import load_dotenv
@@ -18,7 +19,15 @@ from agents.retrieval import (
     _build_technique_document,
     _chunk_text,
     _retrieve_candidate_techniques,
+    coverage_stats,
     retrieve_candidates_per_chunk,
+)
+from agents.prompt_budget import (
+    PROMPT_BUDGET_ENFORCE,
+    check_budget,
+    estimate_tokens,
+    record_prompt,
+    trim_to_budget,
 )
 
 load_dotenv()
@@ -55,6 +64,14 @@ RETRIEVAL_PER_CHUNK = os.getenv("RETRIEVAL_PER_CHUNK", "true").lower() == "true"
 # 0.471->0.412). Set 0 untuk menonaktifkan (model bebas memilih dari seluruh
 # kandidat yang tampil).
 TECHNIQUE_ACCEPT_TOP_N = int(os.getenv("TECHNIQUE_ACCEPT_TOP_N", "30"))
+# Acak URUTAN daftar kandidat di dalam prompt (diagnostik, default nonaktif).
+# Tujuannya menguji apakah pilihan LLM digerakkan oleh ISI laporan atau sekadar
+# oleh urutan peringkat retrieval: bila metrik stabil saat urutan diacak, model
+# benar-benar membaca; bila anjlok, model sebagian besar mengikuti urutan.
+# Yang berubah HANYA urutan tampil — himpunan kandidat, peringkat retrieval asli
+# (dipakai metrik keselarasan), dan himpunan yang lolos TECHNIQUE_ACCEPT_TOP_N
+# semuanya dihitung dari urutan asli sehingga tidak ikut terpengaruh.
+CANDIDATE_SHUFFLE_SEED = os.getenv("CANDIDATE_SHUFFLE_SEED", "").strip()
 DEBUG_MODE = os.getenv("DEBUG_AGENT", "false").lower() == "true"
 DISABLE_THINKING = os.getenv("LLM_DISABLE_THINKING", "true").lower() == "true"
 # Qwen3.5 mengabaikan enable_thinking=false & /no_think; di LM Studio reasoning
@@ -109,7 +126,7 @@ def _is_transient_error(error_text: str) -> bool:
 
 def create_technique_agent():
     """Inisialisasi LM Studio local server (OpenAI-compatible)."""
-    base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://100.100.211.39:1234").rstrip("/")
+    base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://localhost:1234").rstrip("/")
     model_name = os.getenv("LOCAL_LLM_MODEL", "qwen/qwen3-4b")
     api_key = os.getenv("LOCAL_LLM_API_KEY", "")
     fallback_model = os.getenv("LOCAL_LLM_FALLBACK_MODEL", "").strip() or None
@@ -296,26 +313,66 @@ def _extract_technique_ids_from_text(response_text: str, attck_techniques: dict)
 def _format_candidate_list(
     candidate_technique_ids: list[str],
     attck_techniques: dict,
-) -> tuple[str, set]:
+) -> tuple[list[str], list[str]]:
     """Format daftar kandidat hasil retrieval untuk prompt.
 
     Deskripsi dipangkas dan daftar dibatasi anggaran karakter agar muat di
     context window model (penting untuk model dengan n_ctx kecil seperti 4096).
-    Mengembalikan (teks daftar, himpunan ID yang benar-benar tampil).
+    Mengembalikan (baris-baris daftar, ID yang benar-benar tampil) sebagai dua
+    list SEJAJAR — supaya pemangkasan anggaran token (prompt_budget) bisa
+    membuang baris dari ekor sekaligus ID-nya.
     """
-    technique_list = []
-    shown_candidate_ids = set()
+    technique_lines = []
+    shown_candidate_ids = []
     used_chars = 0
     for tid in candidate_technique_ids:
         tdata = attck_techniques[tid]
         desc = tdata["description"][:CANDIDATE_DESC_CHARS].replace("\n", " ")
         line = f"- {tid}: {tdata['name']} — {desc}"
-        if used_chars + len(line) > CANDIDATE_LIST_MAX_CHARS and technique_list:
+        if used_chars + len(line) > CANDIDATE_LIST_MAX_CHARS and technique_lines:
             break
-        technique_list.append(line)
-        shown_candidate_ids.add(tid)
+        technique_lines.append(line)
+        shown_candidate_ids.append(tid)
         used_chars += len(line) + 1
-    return "\n".join(technique_list), shown_candidate_ids
+    return technique_lines, shown_candidate_ids
+
+
+def _shuffle_candidate_display(
+    technique_lines: list[str],
+    shown_candidate_ids: list[str],
+    chunk: str,
+) -> tuple[list[str], list[str]]:
+    """Acak urutan tampil daftar kandidat secara reproducible (Tahap 4).
+
+    Dipanggil SESUDAH _format_candidate_list, bukan sebelum — supaya himpunan
+    kandidat yang tampil tetap ditentukan oleh peringkat retrieval asli dan
+    anggaran karakter. Kalau pengacakan dilakukan lebih dulu, pemangkasan
+    anggaran akan memotong ekor daftar yang sudah teracak dan HIMPUNAN-nya ikut
+    berubah — bukan lagi eksperimen urutan murni.
+
+    Seed diturunkan dari (seed pengguna + isi chunk) supaya tiap chunk mendapat
+    permutasi berbeda, tetapi run dengan seed sama menghasilkan urutan identik
+    tanpa bergantung pada urutan laporan diproses.
+    """
+    pairs = list(zip(technique_lines, shown_candidate_ids))
+    rng = random.Random(f"{CANDIDATE_SHUFFLE_SEED}|{len(chunk)}|{chunk[:200]}")
+    rng.shuffle(pairs)
+    return [line for line, _ in pairs], [tid for _, tid in pairs]
+
+
+def _record_ranks(store: dict, technique_ids: list[str], rank_of: dict) -> None:
+    """Catat peringkat retrieval tiap teknik, simpan yang TERBAIK antar chunk.
+
+    Satu teknik bisa dipilih di beberapa chunk dengan peringkat berbeda; yang
+    dipakai untuk statistik adalah peringkat terkecil, yaitu posisi terbaik yang
+    pernah diberikan retrieval kepada teknik itu.
+    """
+    for tid in technique_ids:
+        rank = rank_of.get(tid)
+        if rank is None:
+            continue
+        if tid not in store or rank < store[tid]:
+            store[tid] = rank
 
 
 def extract_techniques(
@@ -324,9 +381,16 @@ def extract_techniques(
     attck_techniques: dict,
     top_k: int = DEFAULT_CANDIDATE_TOP_K,
     reviewer_feedback: str = "",
+    telemetry: dict | None = None,
 ) -> list[str]:
     """
     Mengekstrak teknik ATT&CK spesifik dari laporan CTI.
+
+    Args:
+        telemetry: dict opsional yang DIISI di tempat dengan jangkauan pembacaan
+            (coverage_chars/report_chars/coverage_ratio), daftar kandidat yang
+            benar-benar tampil di prompt, dan jumlah kandidat yang dipangkas
+            anggaran context window. Tidak memengaruhi perilaku pemetaan.
 
     Returns:
         list of technique IDs: ["T1566", "T1059", ...]
@@ -371,6 +435,21 @@ def extract_techniques(
         )
         chunk_candidates = [(chunk, candidate_technique_ids) for chunk in chunks]
 
+    # Jangkauan pembacaan efektif laporan ini (dibatasi chunk_size & max_chunks).
+    if telemetry is not None:
+        telemetry.update(coverage_stats(report_text))
+        telemetry["candidates_shown"] = []
+        telemetry["candidates_dropped_budget"] = 0
+        telemetry["prompt_overflow_calls"] = 0
+        # --- Keselarasan dengan peringkat retrieval (Tahap 2b) ---
+        # Peringkat 1-indeks pada daftar kandidat chunk ASAL, sebelum & sesudah
+        # filter TECHNIQUE_ACCEPT_TOP_N. Nilai per teknik = peringkat TERBAIK
+        # (terkecil) di antara chunk-chunk yang memilihnya.
+        telemetry["rank_of_selected"] = {}
+        telemetry["rank_of_accepted"] = {}
+        telemetry["rank_of_filtered_out"] = {}
+        telemetry["candidate_shuffle_seed"] = CANDIDATE_SHUFFLE_SEED or None
+
     if not any(cands for _, cands in chunk_candidates):
         return []
 
@@ -381,13 +460,21 @@ def extract_techniques(
 
     seen = set()
     aggregated: list[str] = []
+    shown_all: set[str] = set()
     for chunk, candidate_technique_ids in chunk_candidates:
         if not candidate_technique_ids:
             continue
-        technique_str, shown_candidate_ids = _format_candidate_list(
+        candidate_lines, shown_candidate_list = _format_candidate_list(
             candidate_technique_ids, attck_techniques
         )
-        prompt = f"""TASK: Select every MITRE ATT&CK technique from CANDIDATES that is described in
+        # Peringkat retrieval ASLI chunk ini (1 = kandidat teratas). Dihitung
+        # sebelum pengacakan supaya metrik keselarasan tetap mengukur peringkat
+        # retrieval yang sesungguhnya, bukan posisi tampil di prompt.
+        rank_of = {tid: idx for idx, tid in enumerate(candidate_technique_ids, start=1)}
+        # Prompt dibangun lewat closure agar bisa DISUSUN ULANG dengan daftar
+        # kandidat yang lebih pendek tanpa mengubah satu kata pun teksnya.
+        def _build_prompt(technique_str: str) -> str:
+            return f"""TASK: Select every MITRE ATT&CK technique from CANDIDATES that is described in
 the report excerpt. You MUST choose only from CANDIDATES. Never output an ID
 that is not in the list.
 
@@ -425,6 +512,39 @@ REPORT EXCERPT:
 
 Answer with ONLY the JSON object {{"ids": [...]}}.
 """
+
+        prompt = _build_prompt("\n".join(candidate_lines))
+        budget = check_budget(system_prompt, prompt, max_tokens)
+        dropped = 0
+
+        # PROMPT_BUDGET_ENFORCE=true: pangkas kandidat dari peringkat TERBAWAH
+        # sampai prompt muat di n_ctx. Potongan laporan tidak pernah dikorbankan.
+        if PROMPT_BUDGET_ENFORCE and budget["overflow"] and len(candidate_lines) > 1:
+            overhead = budget["prompt_tokens"] - estimate_tokens("\n".join(candidate_lines))
+            candidate_lines, dropped = trim_to_budget(candidate_lines, overhead, max_tokens)
+            if dropped:
+                shown_candidate_list = shown_candidate_list[:len(candidate_lines)]
+                prompt = _build_prompt("\n".join(candidate_lines))
+                budget = check_budget(system_prompt, prompt, max_tokens)
+
+        # Pengacakan urutan dilakukan PALING AKHIR — sesudah anggaran karakter
+        # dan sesudah pemangkasan budget menentukan himpunan yang tampil, supaya
+        # yang berubah benar-benar hanya urutan. Jumlah karakter tidak berubah,
+        # jadi angka `budget` di atas tetap sahih.
+        if CANDIDATE_SHUFFLE_SEED:
+            candidate_lines, shown_candidate_list = _shuffle_candidate_display(
+                candidate_lines, shown_candidate_list, chunk
+            )
+            prompt = _build_prompt("\n".join(candidate_lines))
+
+        record_prompt("technique", budget, candidates_dropped=dropped)
+        shown_candidate_ids = set(shown_candidate_list)
+        shown_all.update(shown_candidate_ids)
+        if telemetry is not None:
+            telemetry["candidates_dropped_budget"] += dropped
+            if budget["overflow"]:
+                telemetry["prompt_overflow_calls"] += 1
+
         chunk_techniques = _llm_extract_ids(
             model=model,
             system_prompt=system_prompt,
@@ -434,13 +554,39 @@ Answer with ONLY the JSON object {{"ids": [...]}}.
             temperature=revise_temperature,
             allowed_ids=shown_candidate_ids,
         )
+        # Peringkat retrieval dari apa yang DIPILIH LLM, sebelum filter apa pun.
+        if telemetry is not None:
+            _record_ranks(telemetry["rank_of_selected"], chunk_techniques, rank_of)
+
+        selected_before_filter = chunk_techniques
         if TECHNIQUE_ACCEPT_TOP_N > 0:
+            # Himpunan yang diterima ditentukan dari urutan retrieval ASLI,
+            # tidak terpengaruh pengacakan tampilan di atas.
             accepted = set(candidate_technique_ids[:TECHNIQUE_ACCEPT_TOP_N])
             chunk_techniques = [t for t in chunk_techniques if t in accepted]
+
+        if telemetry is not None:
+            _record_ranks(telemetry["rank_of_accepted"], chunk_techniques, rank_of)
+            kept = set(chunk_techniques)
+            _record_ranks(
+                telemetry["rank_of_filtered_out"],
+                [t for t in selected_before_filter if t not in kept],
+                rank_of,
+            )
+
         for tid in chunk_techniques:
             if tid not in seen:
                 seen.add(tid)
                 aggregated.append(tid)
+
+    if telemetry is not None:
+        telemetry["candidates_shown"] = sorted(shown_all)
+        # Teknik yang tersaring di satu chunk tapi diterima di chunk lain TIDAK
+        # benar-benar dibuang filter — keluarkan dari daftar korban filter.
+        telemetry["rank_of_filtered_out"] = {
+            tid: rank for tid, rank in telemetry["rank_of_filtered_out"].items()
+            if tid not in telemetry["rank_of_accepted"]
+        }
 
     return aggregated
 

@@ -18,7 +18,7 @@ Komponen utama:
 Pastikan nilai berikut terisi:
 ```
 LLM_PROVIDER=lmstudio
-LOCAL_LLM_BASE_URL=http://100.100.211.39:1234
+LOCAL_LLM_BASE_URL=http://localhost:1234
 LOCAL_LLM_MODEL=qwen/qwen3-4b
 # Optional jika server butuh auth
 # LOCAL_LLM_API_KEY=

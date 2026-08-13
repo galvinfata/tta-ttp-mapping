@@ -115,6 +115,48 @@ def _chunk_text(text: str, chunk_size: int, overlap: int, max_chunks: int) -> li
     return chunks
 
 
+def coverage_stats(
+    report_text: str,
+    chunk_size: int | None = None,
+    overlap: int | None = None,
+    max_chunks: int | None = None,
+) -> dict:
+    """Jangkauan pembacaan efektif satu laporan dengan parameter chunking aktif.
+
+    Chunk dibatasi max_chunks, sehingga laporan yang lebih panjang dari
+    chunk_size + (max_chunks-1) * (chunk_size - overlap) TIDAK PERNAH dibaca
+    seluruhnya oleh agen — bagian ekornya tak pernah masuk prompt manapun.
+    Fungsi ini membuat batas itu terukur per laporan, bukan konstanta tersembunyi.
+
+    Karena chunk bersifat kontigu (mulai dari indeks 0, hanya bergeser dengan
+    overlap), jangkauan = indeks akhir chunk terakhir.
+
+    Returns:
+        report_chars   : panjang teks laporan asli
+        coverage_chars : jumlah karakter yang benar-benar masuk ke prompt
+        coverage_ratio : coverage_chars / report_chars (1.0 = terbaca utuh)
+        chunks         : jumlah chunk yang dihasilkan
+        retrieval_chars: panjang teks yang dilihat TF-IDF (RETRIEVAL_MAX_CHARS)
+    """
+    chunk_size = LOCAL_LLM_REPORT_MAX_CHARS if chunk_size is None else chunk_size
+    overlap = CHUNK_OVERLAP_CHARS if overlap is None else overlap
+    max_chunks = MAX_CHUNKS if max_chunks is None else max_chunks
+
+    text = report_text or ""
+    report_chars = len(text)
+    chunks = _chunk_text(text, chunk_size=chunk_size, overlap=overlap, max_chunks=max_chunks)
+    step = max(1, chunk_size - overlap)
+    coverage_chars = min(report_chars, (len(chunks) - 1) * step + chunk_size)
+
+    return {
+        "report_chars": report_chars,
+        "coverage_chars": coverage_chars,
+        "coverage_ratio": round(coverage_chars / report_chars, 4) if report_chars else 1.0,
+        "chunks": len(chunks),
+        "retrieval_chars": min(report_chars, RETRIEVAL_MAX_CHARS),
+    }
+
+
 def _build_technique_document(technique_id: str, technique_data: dict) -> str:
     name = technique_data.get("name", "")
     description = technique_data.get("description", "")[:RETRIEVAL_DOC_DESC_CHARS]
@@ -165,7 +207,40 @@ def _match_named_techniques(report_text: str, attck_techniques: dict) -> list[st
 # State runtime embedding: client OpenAI, matriks embedding dokumen KB, dan
 # flag disabled (sekali gagal -> nonaktif untuk sisa proses agar perilaku
 # konsisten, tidak campur hybrid/TF-IDF antar laporan).
-_EMB_STATE: dict = {"client": None, "ids": None, "doc_vecs": None, "disabled": False}
+#
+# Tiga pencacah terakhir ada supaya manifest bisa membuktikan retrieval run ini
+# BENAR-BENAR hibrida sepanjang run, bukan sekadar menyalin nilai env
+# RETRIEVAL_EMBEDDING_HYBRID. Sebelum ini, server embedding yang mati di tengah
+# run membuat sisa laporan diproses TF-IDF murni tanpa jejak apapun di manifest
+# — pola persis yang sudah ditutup untuk reviewer_active lewat bukti runtime.
+_EMB_STATE: dict = {
+    "client": None,
+    "ids": None,
+    "doc_vecs": None,
+    "disabled": False,
+    "calls_hybrid": 0,       # panggilan retrieval yang skornya benar-benar fusi
+    "calls_tfidf_only": 0,   # panggilan retrieval yang jatuh ke TF-IDF murni
+    "fallback_reason": None, # pesan error pertama yang memicu fallback
+}
+
+
+def embedding_runtime_state() -> dict:
+    """Bukti runtime status retrieval hibrida, untuk dicatat di manifest.
+
+    `fallback_triggered=True` berarti sebagian (atau seluruh) run berjalan
+    dengan TF-IDF murni meski env menyatakan hybrid aktif.
+    """
+    hybrid = _EMB_STATE["calls_hybrid"]
+    tfidf_only = _EMB_STATE["calls_tfidf_only"]
+    total = hybrid + tfidf_only
+    return {
+        "hybrid_requested": RETRIEVAL_EMBEDDING_HYBRID,
+        "fallback_triggered": bool(_EMB_STATE["disabled"]),
+        "fallback_reason": _EMB_STATE["fallback_reason"],
+        "retrieval_calls_hybrid": hybrid,
+        "retrieval_calls_tfidf_only": tfidf_only,
+        "pct_calls_hybrid": round(hybrid / total, 4) if total else None,
+    }
 # Cache embedding dokumen KB di disk (dihitung sekali per isi KB + model).
 _EMB_CACHE_PATH = Path(__file__).resolve().parents[2] / "results" / "metrics" / "_emb_docs_cache.npz"
 
@@ -174,7 +249,7 @@ def _emb_client():
     if _EMB_STATE["client"] is None:
         from openai import OpenAI
 
-        base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://100.100.211.39:1234").rstrip("/")
+        base_url = os.getenv("LOCAL_LLM_BASE_URL", "http://localhost:1234").rstrip("/")
         api_key = os.getenv("LOCAL_LLM_API_KEY", "") or "lm-studio"
         _EMB_STATE["client"] = OpenAI(base_url=f"{base_url}/v1", api_key=api_key)
     return _EMB_STATE["client"]
@@ -219,6 +294,7 @@ def _ensure_doc_embeddings(candidate_ids: list[str], documents: list[str]) -> np
             "retrieval jatuh kembali ke TF-IDF murni untuk sisa proses."
         )
         _EMB_STATE["disabled"] = True
+        _EMB_STATE["fallback_reason"] = f"doc embedding: {str(exc)[:200]}"
         return None
 
     _EMB_STATE.update({"ids": list(candidate_ids), "doc_vecs": vecs})
@@ -251,6 +327,7 @@ def _embedding_similarity(report_text: str, doc_vecs: np.ndarray) -> np.ndarray 
             "retrieval jatuh kembali ke TF-IDF murni untuk sisa proses."
         )
         _EMB_STATE["disabled"] = True
+        _EMB_STATE["fallback_reason"] = f"query embedding: {str(exc)[:200]}"
         return None
     return (w_vecs @ doc_vecs.T).max(axis=0)
 
@@ -311,6 +388,7 @@ def _retrieve_candidate_techniques(
         # Fusi dengan skor embedding semantik (z-score keduanya agar skala
         # sebanding). Bila server embedding tak tersedia, similarity TF-IDF
         # murni tetap dipakai (fallback otomatis, lihat _ensure_doc_embeddings).
+        fused = False
         if RETRIEVAL_EMBEDDING_HYBRID and not _EMB_STATE["disabled"]:
             doc_vecs = _ensure_doc_embeddings(candidates, documents)
             if doc_vecs is not None:
@@ -320,6 +398,9 @@ def _retrieve_candidate_techniques(
                         EMBEDDING_ALPHA * _zscore(emb_sim)
                         + (1 - EMBEDDING_ALPHA) * _zscore(similarity)
                     )
+                    fused = True
+        if RETRIEVAL_EMBEDDING_HYBRID:
+            _EMB_STATE["calls_hybrid" if fused else "calls_tfidf_only"] += 1
 
         ranked_indices = similarity.argsort()[::-1]
         ranked = [candidates[idx] for idx in ranked_indices]

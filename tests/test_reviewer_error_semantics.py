@@ -166,8 +166,20 @@ class TestFullGraphBehavior(unittest.TestCase):
             tactic_calls.append(reviewer_feedback)
             return ["TA0001"]
 
-        def fake_extract_techniques(model, report_text, attck_techniques, reviewer_feedback=""):
+        def fake_extract_techniques(
+            model, report_text, attck_techniques, reviewer_feedback="", telemetry=None
+        ):
             technique_calls.append(reviewer_feedback)
+            # Agen asli mengisi telemetry di tempat (jangkauan pembacaan &
+            # kandidat yang tampil); stub meniru kontrak itu seadanya.
+            if telemetry is not None:
+                telemetry.update({
+                    "report_chars": len(report_text),
+                    "coverage_chars": len(report_text),
+                    "coverage_ratio": 1.0,
+                    "chunks": 1,
+                    "candidates_shown": ["T1566"],
+                })
             return ["T1566"]
 
         fake_review = mock.Mock(side_effect=review_side_effect)
@@ -201,6 +213,18 @@ class TestFullGraphBehavior(unittest.TestCase):
         for key in ("report_id", "predicted_techniques", "ground_truth",
                     "tactics_identified", "stix_bundle"):
             self.assertIn(key, result)
+
+    def test_ground_truth_tactics_derived_from_gt_techniques(self):
+        """GT taktik ikut tersimpan di hasil, diturunkan dari GT teknik.
+
+        Dataset TRAM II hanya melabeli teknik; taktiknya diturunkan lewat fase
+        kill-chain. Fixture: T1566 -> initial-access -> TA0001.
+        """
+        result, _, _, _ = self._run_pipeline([VALID_RESULT])
+        self.assertIn("ground_truth_tactics", result)
+        self.assertEqual(result["ground_truth_tactics"], ["TA0001"])
+        # Diturunkan dari ground_truth, BUKAN disalin dari prediksi taktik.
+        self.assertIsNot(result["ground_truth_tactics"], result["tactics_identified"])
 
     def test_genuine_rejection_triggers_revision_capped_at_max_iter(self):
         result, tactic_calls, technique_calls, fake_review = self._run_pipeline(

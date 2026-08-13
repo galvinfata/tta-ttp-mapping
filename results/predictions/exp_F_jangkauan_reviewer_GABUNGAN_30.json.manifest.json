@@ -1,0 +1,186 @@
+{
+  "run_id": "merge_20260808_215343",
+  "entrypoint": "scripts/merge_partial_runs.py",
+  "preset": "F_jangkauan_reviewer",
+  "status": "complete_merged",
+  "merged_from": [
+    {
+      "results_file": "results\\predictions\\exp_F_jangkauan_reviewer_20260807_193503.json",
+      "run_id": "run_20260807_193503_33668",
+      "reports": 5,
+      "status_asli": "partial",
+      "started_at": "2026-08-07T19:35:03",
+      "duration_seconds": 1959.1,
+      "base_url": "http://100.100.211.39:1234",
+      "git_commit": "081567b35b0631cbdeda52603d5993804c190d8e"
+    },
+    {
+      "results_file": "results\\predictions\\exp_F_jangkauan_reviewer_r6-15_20260807_205611.json",
+      "run_id": "run_20260807_205611_30040",
+      "reports": 10,
+      "status_asli": "complete",
+      "started_at": "2026-08-07T20:56:11",
+      "duration_seconds": 2694.9,
+      "base_url": "http://100.100.211.39:1234",
+      "git_commit": "081567b35b0631cbdeda52603d5993804c190d8e"
+    },
+    {
+      "results_file": "results\\predictions\\exp_F_jangkauan_reviewer_r16-30_20260807_214140.json",
+      "run_id": "run_20260807_214140_16120",
+      "reports": 6,
+      "status_asli": "partial",
+      "started_at": "2026-08-07T21:41:40",
+      "duration_seconds": 2225.7,
+      "base_url": "http://100.100.211.39:1234",
+      "git_commit": "081567b35b0631cbdeda52603d5993804c190d8e"
+    },
+    {
+      "results_file": "results\\predictions\\exp_F_jangkauan_reviewer_r22-30_20260808_210353.json",
+      "run_id": "run_20260808_210353_6116",
+      "reports": 8,
+      "status_asli": "partial",
+      "started_at": "2026-08-08T21:03:53",
+      "duration_seconds": 2242.4,
+      "base_url": "http://100.100.211.39:1234",
+      "git_commit": "081567b35b0631cbdeda52603d5993804c190d8e"
+    },
+    {
+      "results_file": "results\\predictions\\exp_F_jangkauan_reviewer_r30-30_20260808_214413.json",
+      "run_id": "run_20260808_214413_27404",
+      "reports": 1,
+      "status_asli": "complete",
+      "started_at": "2026-08-08T21:44:13",
+      "duration_seconds": 552.4,
+      "base_url": "http://100.100.211.39:1234",
+      "git_commit": "081567b35b0631cbdeda52603d5993804c190d8e"
+    }
+  ],
+  "merge_warnings": [
+    "repo dalam keadaan dirty saat run — kode persis tidak terekam commit",
+    "repo dalam keadaan dirty saat run — kode persis tidak terekam commit",
+    "repo dalam keadaan dirty saat run — kode persis tidak terekam commit",
+    "repo dalam keadaan dirty saat run — kode persis tidak terekam commit"
+  ],
+  "merge_note": "Digabung dari beberapa potongan run. Sah karena tiap laporan diproses independen dan seluruh variabel yang memengaruhi prediksi terverifikasi identik. Metrik dihitung ULANG dari hasil gabungan.",
+  "git": {
+    "commit": "081567b35b0631cbdeda52603d5993804c190d8e",
+    "dirty": true,
+    "branch": "main"
+  },
+  "env": {
+    "LLM_PROVIDER": "lmstudio",
+    "LOCAL_LLM_MODEL": "qwen/qwen3-4b",
+    "LOCAL_LLM_BASE_URL": "http://100.100.211.39:1234",
+    "LLM_N_CTX": 8192,
+    "PROMPT_BUDGET_ENFORCE": false,
+    "TECHNIQUE_CANDIDATE_TOP_K": "50",
+    "LOCAL_LLM_CANDIDATE_TOP_K": "50",
+    "CANDIDATE_LIST_MAX_CHARS": 12000,
+    "CANDIDATE_DESC_CHARS": 160,
+    "LOCAL_LLM_REPORT_MAX_CHARS": 8000,
+    "LLM_CHUNK_OVERLAP_CHARS": 250,
+    "LLM_MAX_CHUNKS": 10,
+    "RETRIEVAL_MAX_CHARS": 40000,
+    "RETRIEVAL_PER_CHUNK": "true",
+    "RETRIEVAL_NAME_BOOST": "true",
+    "RETRIEVAL_EXCLUDE_PRECOMPROMISE": "true",
+    "RETRIEVAL_EMBEDDING_HYBRID": "true",
+    "RETRIEVAL_EMBEDDING_MODEL": "text-embedding-nomic-embed-text-v1.5",
+    "RETRIEVAL_EMBEDDING_ALPHA": "0.5",
+    "RETRIEVAL_DOC_DESC_CHARS": "1000",
+    "ATTCK_DESC_MAX_CHARS": "1000",
+    "TECHNIQUE_ACCEPT_TOP_N": 30,
+    "CANDIDATE_SHUFFLE_SEED": "",
+    "RECONCILE_SUBTECH_FAMILY_CAP": "2",
+    "RECONCILE_TACTIC_FILTER": "false",
+    "REVIEWER_ENABLE": "true",
+    "WEB_UI_ENABLE_REVIEWER": "false",
+    "LLM_REVIEW_MAX_ITER": "2",
+    "LLM_REVISE_TEMPERATURE": "0.4",
+    "LLM_DISABLE_THINKING": "true",
+    "LLM_REASONING_EFFORT": "none",
+    "LLM_STRUCTURED_OUTPUT": "true",
+    "LOCAL_LLM_MAX_TOKENS_TECHNIQUE": "512",
+    "LOCAL_LLM_MAX_TOKENS_TACTIC": "512",
+    "LOCAL_LLM_MAX_TOKENS_REVIEWER": "512",
+    "LLM_REQUEST_TIMEOUT_SECONDS": "120",
+    "ATTCK_SOURCE": "data/mitre_cti/enterprise-attack.json"
+  },
+  "attck": {
+    "source": "D:\\XPersonal\\Kuliah\\Bismillah_TA\\PoC\\ttpmapping\\tta-ttp-mapping\\data\\mitre_cti\\enterprise-attack.json",
+    "sha256": "7f0993caaace193d1af714b306c2b110c539fa1e9807109d6e522f5605fa6282",
+    "version": "13.1"
+  },
+  "reports_processed": 30,
+  "reports_failed": 0,
+  "duration_seconds": 9674.5,
+  "metrics": {
+    "technique": {
+      "precision": 0.2265,
+      "recall": 0.4458,
+      "micro_f1": 0.3004,
+      "accuracy": 0.9537,
+      "jaccard": 0.1674,
+      "base_precision": 0.3344,
+      "base_recall": 0.5831,
+      "base_micro_f1": 0.4251,
+      "base_accuracy": 0.908,
+      "base_jaccard": 0.2411,
+      "total_reports": 30
+    },
+    "tactic": {
+      "tactic_precision": 0.6283,
+      "tactic_recall": 0.597,
+      "tactic_micro_f1": 0.6122,
+      "tactic_accuracy": 0.6381,
+      "tactic_jaccard": 0.4356,
+      "total_reports": 30
+    }
+  },
+  "coverage_stats": {
+    "reports_with_coverage": 30,
+    "coverage_ratio_median": 1.0,
+    "coverage_ratio_mean": 1.0,
+    "coverage_ratio_min": 1.0,
+    "reports_fully_read": 30,
+    "reports_below_60pct": 0,
+    "report_chars_median": 23966
+  },
+  "rank_alignment": {
+    "reports_with_ranks": 30,
+    "ranked_predictions": 767,
+    "predictions_without_rank": 32,
+    "filtered_out_by_accept_top_n": 322,
+    "mean_tfidf_rank": 12.1,
+    "median_tfidf_rank": 10,
+    "rank_buckets": {
+      "1-10": 392,
+      "11-20": 214,
+      "21-30": 161,
+      "31+": 0
+    },
+    "rank_bucket_pct": {
+      "1-10": 0.5111,
+      "11-20": 0.279,
+      "21-30": 0.2099,
+      "31+": 0.0
+    },
+    "pct_outside_top30": 0.0,
+    "filtered_out_median_rank": 40.0
+  },
+  "embedding_runtime": {
+    "hybrid_requested": true,
+    "fallback_triggered": false,
+    "fallback_reason": null,
+    "retrieval_calls_hybrid": 128,
+    "retrieval_calls_tfidf_only": 0,
+    "pct_calls_hybrid": 1.0
+  },
+  "results_file": "results\\predictions\\exp_F_jangkauan_reviewer_GABUNGAN_30.json",
+  "reviewer_active": true,
+  "reports_with_reviewer": 30,
+  "review_iterations_total": 34,
+  "reports_triggering_revision": 4,
+  "reviewer_error_reports": 1,
+  "reviewer_error_calls": 2
+}
