@@ -64,7 +64,7 @@ STIX Output
 
 ### Agent Components
 
-#### 1. **Tactic Agent** (`src/tactic_agent.py`)
+#### 1. **Tactic Agent** (`src/agents/tactic_agent.py`)
 
 **Peran:** Identify TA#### (14 tactics) dari report text
 
@@ -84,7 +84,7 @@ STIX Output
 - Exponential backoff: 1s, 2s, 4s
 - Fallback: Regex extraction jika JSON parsing fail
 
-#### 2. **Technique Agent** (`src/technique_agent.py`)
+#### 2. **Technique Agent** (`src/agents/technique_agent.py`)
 
 **Peran:** Identify T#### (750 techniques) dengan semantic relevance
 
@@ -110,7 +110,7 @@ STIX Output
 ["T1566.001", "T1059.1", "T1195.003"]
 ```
 
-#### 3. **Data Loader** (`src/data_loader.py`)
+#### 3. **Data Loader** (`src/knowledge/data_loader.py`)
 
 **Auto-converts PDF → JSON** sebelum processing:
 - Detects `.pdf` files
@@ -118,21 +118,21 @@ STIX Output
 - Creates `filename__pdf.json` 
 - Skip jika JSON sudah exist & newer
 
-#### 4. **Reconciler** (`src/reconciler.py`)
+#### 4. **Reconciler** (`src/pipeline/reconciler.py`)
 
 **Memperbaiki technique IDs** yang invalid:
 - Mapping dari subtechnique → parent technique jika needed
 - Deduplication
 - Filtering based on tactics
 
-#### 5. **Validator** (`src/validator.py`)
+#### 5. **Validator** (`src/pipeline/validator.py`)
 
 **Final validation step:**
 - Check setiap technique ada di enterprise-attack.json
 - Categorize: valid vs invalid
 - Return only valid techniques
 
-#### 6. **STIX Builder** (`src/stix_builder.py`)
+#### 6. **STIX Builder** (`src/reporting/stix_builder.py`)
 
 **Output STIX 2.1 bundle:**
 - Relationship objects linking techniques

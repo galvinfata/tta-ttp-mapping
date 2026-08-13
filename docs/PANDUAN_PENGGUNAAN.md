@@ -186,9 +186,20 @@ Seluruh parameter bersifat opsional kecuali yang ditandai wajib. Nilai bawaan di
 
 | Parameter | Bawaan | Keterangan |
 |---|---|---|
-| `LOCAL_LLM_REPORT_MAX_CHARS` | `3500` | Ukuran satu *chunk* laporan |
+| `LOCAL_LLM_REPORT_MAX_CHARS` | lihat catatan | Ukuran satu *chunk* laporan |
 | `LLM_CHUNK_OVERLAP_CHARS` | `250` | Tumpang tindih antar *chunk* |
 | `LLM_MAX_CHUNKS` | `3` | Jumlah maksimum *chunk* per laporan |
+
+> **Catatan penting mengenai `LOCAL_LLM_REPORT_MAX_CHARS`.** Parameter ini dibaca
+> oleh **tiga** modul dengan **nilai bawaan yang berbeda-beda**:
+> `3500` pada `src/agents/retrieval.py` (ukuran *chunk* technique agent),
+> `6000` pada `src/agents/tactic_agent.py` (panjang kutipan laporan), dan
+> `2000` pada `src/agents/reviewer_agent.py`. Artinya, bila parameter ini
+> **tidak** disetel pada `.env`, ketiga agen bekerja pada panjang teks yang
+> berlainan. Begitu disetel, satu nilai berlaku untuk ketiganya sekaligus —
+> mengubahnya mengubah tiga hal serentak. Seluruh preset pada `experiments/`
+> menyetelnya eksplisit (`8000`) justru untuk menghilangkan ambiguitas ini,
+> dan disarankan Anda melakukan hal yang sama.
 
 **Reviewer dan Rekonsiliasi**
 
@@ -494,6 +505,13 @@ Tanpa argumen, skrip memakai berkas terbaru pada `results/predictions/`. Keluara
 
 ### H.3 Membangkitkan Grafik Evaluasi
 
+> ⚠️ **Skrip pembangkit grafik tidak disertakan pada repositori publik.** Direktori
+> `evaluation_charts/` dikecualikan melalui `.gitignore` karena keluarannya
+> merupakan materi penulisan Tugas Akhir. Bagian ini didokumentasikan sebagai
+> rekaman prosedur yang ditempuh, bukan sebagai langkah yang dapat dijalankan
+> langsung dari salinan repositori. Seluruh angka yang mendasari grafik tetap
+> dapat dihitung ulang melalui Bagian H.1, H.2, dan H.4.
+
 ```bash
 python evaluation_charts/generate_charts.py results/predictions/<berkas>.json [direktori_keluaran]
 ```
@@ -543,6 +561,59 @@ Skrip menghitung dua pembanding secara *offline* dan deterministik: baseline TF-
 | `scripts/smoke_reviewer.py` | Uji cepat fungsi agen Reviewer |
 
 `scripts/retrieval_ceiling.py` berguna untuk menegaskan temuan bahwa tahap *retrieval* merupakan *bottleneck* utama: teknik yang tidak masuk daftar kandidat mustahil dipilih oleh LLM, berapa pun kualitas penalarannya.
+
+### H.6 Reproduksi Eksperimen Ablasi
+
+Direktori `experiments/` memuat berkas konfigurasi (*preset*) yang dirancang agar
+setiap perlakuan berbeda dari induknya pada **tepat satu baris**, sehingga efek
+yang terukur dapat diatribusikan kepada satu variabel saja.
+
+| Preset | Beda dari induknya | Yang diuji |
+|---|---|---|
+| `A` | — (baseline replikasi) | titik acuan |
+| `E` | dari A: `LLM_MAX_CHUNKS` 3 → 10 | jangkauan pembacaan laporan |
+| `F` | dari E: `REVIEWER_ENABLE` false → true | kontribusi agen Reviewer |
+| `G` | dari A: `TECHNIQUE_ACCEPT_TOP_N` 30 → 0 | efek penyaringan pilihan LLM |
+| `H` | dari G: `CANDIDATE_SHUFFLE_SEED` diisi | ketergantungan pada urutan kandidat |
+
+Preset `B`, `C`, dan `D` disimpan sebagai **kontrol negatif terdokumentasi** dan
+sengaja tidak dijalankan; alasan pembatalannya tercantum pada berkasnya
+masing-masing.
+
+Menjalankan satu preset:
+
+```bash
+python scripts/run_experiment.py --preset E --reports 30
+```
+
+Menyusun tabel perbandingan antar preset:
+
+```bash
+python scripts/compare_experiments.py results/predictions/exp_*.json \
+    --out experiments/tabel_perbandingan.md
+```
+
+Menggabungkan potongan run yang terputus di tengah:
+
+```bash
+python scripts/merge_partial_runs.py <potongan-1>.json <potongan-2>.json \
+    --out results/predictions/exp_<preset>_GABUNGAN_30.json
+```
+
+Penggabungan hanya sah bila seluruh variabel yang memengaruhi prediksi terverifikasi
+identik antar potongan; skrip memeriksanya dan menolak bila berbeda. Metrik
+dihitung **ulang** dari hasil gabungan, bukan dirata-ratakan.
+
+**Berkas manifest.** Setiap run menghasilkan `<hasil>.json` beserta
+`<hasil>.json.manifest.json` yang merekam konfigurasi efektif, *commit* git,
+checksum SHA-256 basis pengetahuan ATT&CK, statistik token *prompt*, indikator
+keselarasan dengan peringkat *retrieval*, serta metrik akhir. Manifest ditulis
+pada setiap *checkpoint*, sehingga run yang terhenti tetap meninggalkan rekaman —
+periksa atribut `status` yang bernilai `complete`, `partial`, atau `aborted`.
+Berkas bertanda `"do_not_use_for_metrics": true` tidak boleh dipakai sebagai hasil.
+
+Temuan lengkap beserta seluruh keterbatasannya terdapat pada
+`experiments/HASIL_EKSPERIMEN.md`.
 
 ---
 
@@ -622,7 +693,9 @@ Karena itu, berkas hasil prediksi pada `results/predictions/` disertakan agar me
 
 Batasan berikut disampaikan secara terbuka sesuai tuntutan komunikasi ilmiah yang objektif:
 
-1. **Kinerja setara baseline.** Pada konfigurasi saat ini, kinerja sistem setara dengan baseline TF-IDF pada tingkat teknik. Nilai tambah artefak terletak pada keluaran terstandar, kalimat bukti, dan kemampuan menangkap TTP tersirat, bukan pada peningkatan metrik agregat.
+1. **Keunggulan atas baseline bersifat terukur namun terbatas populasinya.** Pada perbandingan yang menyamakan anggaran jumlah prediksi (*budget-matched*) dan memakai *retrieval* hibrida yang sama, sistem mengungguli baseline pada *precision* maupun *recall* sekaligus — bukan pertukaran antar keduanya. Pada preset E selisih F1 tingkat teknik induk mencapai **+0,1169** (0,4341 lawan 0,3172) dan pada tingkat *exact* **+0,0959**. Dua hal perlu dicatat secara jujur: perbandingan ini dihitung pada **subset 30 laporan**, bukan 151; dan pembanding yang sah hanyalah baseline hibrida *budget-matched*, sebab baseline TF-IDF murni menonaktifkan komponen *embedding* sehingga selisih terhadapnya memuat dua perubahan sekaligus. Rincian dan berkas pendukungnya ada pada `experiments/HASIL_EKSPERIMEN.md` §7.4.1.
+
+   Perlu ditegaskan bahwa baseline *majority-oracle* yang mencapai *recall* 1,000 merupakan **batas atas trivial**, bukan pesaing yang wajar: baseline tersebut memanfaatkan pengetahuan atas kunci jawaban. Pada anggaran prediksi yang sama, *precision* sistem justru lebih tinggi daripada oracle tersebut.
 2. ***Retrieval* sebagai *bottleneck* utama.** Teknik yang tidak masuk daftar kandidat mustahil terpilih. Plafon *recall* tahap *retrieval* membatasi kinerja seluruh pipeline.
 3. **Cakupan dataset.** Anotasi TRAM II tidak memuat label untuk taktik *Reconnaissance*, *Resource Development*, dan *Impact*. Ketiga taktik tersebut karenanya tidak dapat dievaluasi, dan prediksi pada ketiganya selalu terhitung sebagai *false positive*.
 4. **Ketergantungan pada anotasi acuan.** Anotasi TRAM II bersifat tidak lengkap. Sebagian *false positive* sistem dapat berupa pemetaan yang sebenarnya benar tetapi tidak teranotasi.
@@ -638,7 +711,11 @@ Batasan berikut disampaikan secara terbuka sesuai tuntutan komunikasi ilmiah yan
 | `docs/SETUP_GUIDE.md` | Panduan pemasangan dan penelusuran galat |
 | `docs/ARSITEKTUR_DAN_FLOWCHART.md` | Arsitektur sistem dan diagram alir |
 | `docs/AGENT.md` | Catatan konfigurasi agen |
-| `docs/skripsi/` | Dokumen pendukung Tugas Akhir |
+| `experiments/HASIL_EKSPERIMEN.md` | Hasil ablasi preset A–H beserta keterbatasannya |
+| `experiments/RANCANGAN_PRESET.md` | Rancangan tiap preset dan alasannya |
+
+Naskah Tugas Akhir tidak disertakan pada repositori ini; repositori memuat artefak
+sistem beserta bukti eksperimennya.
 
 ---
 
